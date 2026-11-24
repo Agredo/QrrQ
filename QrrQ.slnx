@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/QrrQ/QrrQ.csproj" />
+    <Project Path="src/QrrQ.Cli/QrrQ.Cli.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/QrrQ.Tests/QrrQ.Tests.csproj" />
+  </Folder>
+</Solution>

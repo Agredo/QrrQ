@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>QrrQ.Cli</RootNamespace>
+    <!-- als .NET-Tool installierbar: dotnet tool install -g QrrQ.Cli → Befehl "qrrq" -->
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>qrrq</ToolCommandName>
+    <PackageId>QrrQ.Cli</PackageId>
+    <Title>QrrQ.Cli – Spiegel-QR-Codes auf der Kommandozeile</Title>
+    <Version>1.0.0</Version>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <Description>Kommandozeile für QrrQ: erzeugt QR-Codes, die normal gescannt einen Text und gespiegelt einen zweiten zeigen – als PNG und SVG, inklusive eingebautem Selbsttest. Installation: dotnet tool install -g QrrQ.Cli, Aufruf: qrrq "normal" "gespiegelt".</Description>
+    <PackageTags>qr;qrcode;mirror;spiegel;escape-room;puzzle;dotnet-tool;cli;svg;png</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../QrrQ/QrrQ.csproj" />
+    <None Include="../../README.md" Pack="true" PackagePath="/" />
+    <None Include="../../icon.png" Pack="true" PackagePath="/" />
+  </ItemGroup>
+
+</Project>

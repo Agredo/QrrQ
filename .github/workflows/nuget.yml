@@ -1,0 +1,93 @@
+name: NuGet
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Paketversion (leer = 0.0.0-dev.<Run>)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+env:
+  NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 11.0.x
+
+      - name: Version bestimmen
+        id: version
+        shell: bash
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            version="${GITHUB_REF_NAME#v}"
+          elif [[ -n "${INPUT_VERSION}" ]]; then
+            version="${INPUT_VERSION}"
+          else
+            version="0.0.0-dev.${GITHUB_RUN_NUMBER}"
+          fi
+          echo "value=${version}" >> "$GITHUB_OUTPUT"
+          echo "Version: ${version}"
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build -c Release --no-restore -p:Version=${{ steps.version.outputs.value }}
+
+      - name: Tests
+        run: dotnet test -c Release --no-build --logger "console;verbosity=normal"
+
+      - name: Pakete packen
+        run: |
+          dotnet pack src/QrrQ/QrrQ.csproj -c Release --no-build -o artifacts -p:Version=${{ steps.version.outputs.value }}
+          dotnet pack src/QrrQ.Cli/QrrQ.Cli.csproj -c Release --no-build -o artifacts -p:Version=${{ steps.version.outputs.value }}
+
+      - name: Artefakte hochladen
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-packages-${{ steps.version.outputs.value }}
+          path: |
+            artifacts/*.nupkg
+            artifacts/*.snupkg
+
+      - name: Auf nuget.org veröffentlichen
+        if: env.NUGET_API_KEY != ''
+        run: |
+          for package in artifacts/*.nupkg artifacts/*.snupkg; do
+            dotnet nuget push "$package" \
+              --api-key "$NUGET_API_KEY" \
+              --source https://api.nuget.org/v3/index.json \
+              --skip-duplicate
+          done
+
+      - name: Hinweis ohne API-Key
+        if: env.NUGET_API_KEY == ''
+        run: echo "::warning::Secret NUGET_API_KEY fehlt – die Pakete wurden nur als Artefakt bereitgestellt."
+
+      - name: GitHub-Release anlegen
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            artifacts/*.nupkg artifacts/*.snupkg \
+            --title "QrrQ $GITHUB_REF_NAME" \
+            --generate-notes \
+            --verify-tag \
+          || gh release upload "$GITHUB_REF_NAME" artifacts/*.nupkg artifacts/*.snupkg --clobber

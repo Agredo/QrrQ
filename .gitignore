@@ -1,0 +1,18 @@
+# Build-Ausgaben
+bin/
+obj/
+artifacts/
+TestResults/
+*.nupkg
+*.snupkg
+
+# IDE
+.vs/
+.vscode/
+*.user
+*.suo
+.idea/
+
+# Betriebssystem
+.DS_Store
+Thumbs.db

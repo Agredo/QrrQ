@@ -1,0 +1,28 @@
+<Project>
+  <PropertyGroup>
+    <!-- .NET 11 / C# 15 (C# 15 ist die Standard-Sprachversion für net11.0) -->
+    <TargetFramework>net11.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <Deterministic>true</Deterministic>
+
+    <!-- NuGet-Metadaten für alle Pakete -->
+    <Authors>Agredo</Authors>
+    <Company>Agredo</Company>
+    <Product>QrrQ</Product>
+    <Copyright>Copyright © 2026 Agredo</Copyright>
+    <PackageProjectUrl>https://github.com/Agredo/QrrQ</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Agredo/QrrQ</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageTags>qr;qrcode;mirror;spiegel;escape-room;puzzle;steganography;reed-solomon;error-correction;gf256;svg;png</PackageTags>
+    <PackageReleaseNotes>https://github.com/Agredo/QrrQ/releases</PackageReleaseNotes>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <NeutralLanguage>de</NeutralLanguage>
+  </PropertyGroup>
+</Project>
