@@ -30,12 +30,14 @@ dotnet tool install -g QrrQ.Cli
 
 Für Rechner ohne .NET-Laufzeit gibt es vollständig vorkompilierte Einzeldateien. Sie werden als **Native AOT** mit `TrimMode=full`, invarianter Globalisierung und ohne Reflection-Metadaten gebaut – das Ergebnis ist eine einzelne ausführbare Datei ohne Laufzeitabhängigkeiten.
 
-| Plattform | RID | Datei | Größe |
+| Plattform | RID | Datei | Größe (entpackt) |
 |---|---|---|---|
-| Windows x64 | `win-x64` | `qrrq-<version>-win-x64.zip` | ~1,7 MB |
-| Windows ARM64 | `win-arm64` | `qrrq-<version>-win-arm64.zip` | ~1,7 MB |
-| Linux x64 | `linux-x64` | `qrrq-<version>-linux-x64.tar.gz` | ~1,7 MB |
-| macOS Apple Silicon | `osx-arm64` | `qrrq-<version>-osx-arm64.tar.gz` | ~1,7 MB |
+| Windows x64 | `win-x64` | `qrrq-<version>-win-x64.zip` | 1,7 MB |
+| Windows ARM64 | `win-arm64` | `qrrq-<version>-win-arm64.zip` | 1,7 MB |
+| Linux x64 | `linux-x64` | `qrrq-<version>-linux-x64.tar.gz` | 1,8 MB |
+| macOS Apple Silicon | `osx-arm64` | `qrrq-<version>-osx-arm64.tar.gz` | 1,7 MB |
+
+Die Archive selbst sind rund 0,8 MB groß.
 
 Bezug: die Assets des jeweils neuesten [GitHub-Release](https://github.com/Agredo/QrrQ/releases). Entpacken, `qrrq` (bzw. `qrrq.exe`) aufrufen, fertig:
 

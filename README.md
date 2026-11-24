@@ -30,12 +30,14 @@ dotnet tool install -g QrrQ.Cli
 
 For machines without a .NET runtime there are fully precompiled single files. They are built as **Native AOT** with `TrimMode=full`, invariant globalization and without reflection metadata — the result is one executable with no runtime dependencies.
 
-| Platform | RID | File | Size |
+| Platform | RID | File | Size (unpacked) |
 |---|---|---|---|
-| Windows x64 | `win-x64` | `qrrq-<version>-win-x64.zip` | ~1.7 MB |
-| Windows ARM64 | `win-arm64` | `qrrq-<version>-win-arm64.zip` | ~1.7 MB |
-| Linux x64 | `linux-x64` | `qrrq-<version>-linux-x64.tar.gz` | ~1.7 MB |
-| macOS Apple Silicon | `osx-arm64` | `qrrq-<version>-osx-arm64.tar.gz` | ~1.7 MB |
+| Windows x64 | `win-x64` | `qrrq-<version>-win-x64.zip` | 1.7 MB |
+| Windows ARM64 | `win-arm64` | `qrrq-<version>-win-arm64.zip` | 1.7 MB |
+| Linux x64 | `linux-x64` | `qrrq-<version>-linux-x64.tar.gz` | 1.8 MB |
+| macOS Apple Silicon | `osx-arm64` | `qrrq-<version>-osx-arm64.tar.gz` | 1.7 MB |
+
+The archives themselves are about 0.8 MB.
 
 Download the assets of the latest [GitHub release](https://github.com/Agredo/QrrQ/releases), unpack, run `qrrq` (or `qrrq.exe`), done:
 
