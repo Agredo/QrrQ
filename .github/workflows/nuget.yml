@@ -22,9 +22,9 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 11.0.x
 
@@ -59,7 +59,7 @@ jobs:
           dotnet pack src/QrrQ.Cli/QrrQ.Cli.csproj -c Release --no-build -o artifacts -p:Version=${{ steps.version.outputs.value }}
 
       - name: Artefakte hochladen
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: nuget-packages-${{ steps.version.outputs.value }}
           path: |
