@@ -1,231 +1,254 @@
-# QrrQ – QR-Codes mit Spiegel-Geheimnis
+# QrrQ – QR codes with a mirror secret
 
 [![NuGet QrrQ](https://img.shields.io/nuget/v/QrrQ.svg?label=NuGet%20QrrQ)](https://www.nuget.org/packages/QrrQ)
 [![NuGet QrrQ.Cli](https://img.shields.io/nuget/v/QrrQ.Cli.svg?label=NuGet%20QrrQ.Cli)](https://www.nuget.org/packages/QrrQ.Cli)
 [![CI](https://github.com/Agredo/QrrQ/actions/workflows/ci.yml/badge.svg)](https://github.com/Agredo/QrrQ/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**QrrQ** erzeugt QR-Codes mit zwei Inhalten: Normal gescannt liefern sie Text A, im Spiegel (oder von der Rückseite einer Folie) liefern sie Text B. Beide Lesarten sind gültige QR-Codes nach ISO/IEC 18004. Es braucht keine spezielle App, jeder normale Scanner reicht.
+**English** · [Deutsch](README.de.md)
 
-- .NET 11 / C# 15, keine Laufzeitabhängigkeiten (eigener QR-Encoder, Reed-Solomon, PNG- und SVG-Ausgabe)
-- API: zwei Strings rein, ein Code mit `byte[]`-PNG, SVG oder Modulraster raus
-- Eingebauter Decoder prüft jede Lösung in beiden Richtungen
-- Durchgängig getestet (37 Unit-Tests, Selbsttest) und mit **OpenCV** und **zxing-cpp** gegengeprüft
-- NuGet-Pakete: [`QrrQ`](https://www.nuget.org/packages/QrrQ) (Bibliothek) und [`QrrQ.Cli`](https://www.nuget.org/packages/QrrQ.Cli) (dotnet-Tool)
+**QrrQ** generates QR codes with two payloads: scanned normally they return text A, scanned in a mirror (or from the back of a transparency) they return text B. Both readings are valid QR codes according to ISO/IEC 18004. No special app is needed — any ordinary scanner will do.
+
+- .NET 11 / C# 15, no runtime dependencies (own QR encoder, Reed-Solomon, PNG and SVG output)
+- API: two strings in, one code out as `byte[]` PNG, SVG or module grid
+- Built-in decoder verifies every solution in both directions
+- Thoroughly tested (37 unit tests, self-test) and cross-checked against **OpenCV** and **zxing-cpp**
+- NuGet packages: [`QrrQ`](https://www.nuget.org/packages/QrrQ) (library) and [`QrrQ.Cli`](https://www.nuget.org/packages/QrrQ.Cli) (dotnet tool)
+- Native AOT: prebuilt, trimmed single files for win-x64, win-arm64, linux-x64 and osx-arm64 (no .NET installation required, ~1.7 MB)
 
 ## Installation
 
 ```bash
-# Bibliothek
+# library
 dotnet add package QrrQ
 
-# Kommandozeilen-Tool (Befehl: qrrq)
+# command line tool (command: qrrq)
 dotnet tool install -g QrrQ.Cli
 ```
 
-## Schnellstart
+## Ready-made binaries (Native AOT)
+
+For machines without a .NET runtime there are fully precompiled single files. They are built as **Native AOT** with `TrimMode=full`, invariant globalization and without reflection metadata — the result is one executable with no runtime dependencies.
+
+| Platform | RID | File | Size |
+|---|---|---|---|
+| Windows x64 | `win-x64` | `qrrq-<version>-win-x64.zip` | ~1.7 MB |
+| Windows ARM64 | `win-arm64` | `qrrq-<version>-win-arm64.zip` | ~1.7 MB |
+| Linux x64 | `linux-x64` | `qrrq-<version>-linux-x64.tar.gz` | ~1.7 MB |
+| macOS Apple Silicon | `osx-arm64` | `qrrq-<version>-osx-arm64.tar.gz` | ~1.7 MB |
+
+Download the assets of the latest [GitHub release](https://github.com/Agredo/QrrQ/releases), unpack, run `qrrq` (or `qrrq.exe`), done:
+
+```bash
+qrrq "Wrong trail" "Code: 4711" -o puzzle --svg
+```
+
+The archives contain `LICENSE` and `NOTICE`. They are produced by `.github/workflows/native.yml`: four runners, one `dotnet publish -p:PublishAot=true` each, followed by a self-test of the produced file before packaging. On a `v*` tag the workflow attaches the archives to the release automatically.
+
+## Quick start
 
 ```csharp
 using QrrQ;
 
-var code = QrrQGenerator.Create("Falsche Fährte", "Code: 4711");
+var code = QrrQGenerator.Create("Wrong trail", "Code: 4711");
 
-byte[] png = code.ToPng();                            // Druckmotiv
-var (normal, mirrored) = code.ToPngPair();            // Motiv + Spiegelbild (zum Testen am Bildschirm)
+byte[] png = code.ToPng();                            // print artwork
+var (normal, mirrored) = code.ToPngPair();            // artwork + mirror image (for on-screen testing)
 string svg = code.ToSvg(moduleSize: 8);
-bool[,] modules = code.Matrix.ToArray();              // Rohdaten [Zeile, Spalte]
-byte[] packed = code.Matrix.ToPackedRows();           // 1 Bit pro Modul
+bool[,] modules = code.Matrix.ToArray();              // raw data [row, column]
+byte[] packed = code.Matrix.ToPackedRows();           // 1 bit per module
 
-Console.WriteLine(code);   // QrrQ V6 (41×41), M/M: "Falsche Fährte" ⇄ "Code: 4711"
+Console.WriteLine(code);   // QrrQ V6 (41×41), M/M: "Wrong trail" ⇄ "Code: 4711"
 ```
 
-Ohne Exceptions, mit Union-Typ (C# 15):
+Without exceptions, using a union type (C# 15):
 
 ```csharp
 var message = QrrQGenerator.TryCreate(a, b, new QrrQOptions { MaxVersion = 10 }) switch
 {
-    QrrQCode code => $"Version {code.Version}, fehlerfrei: {code.IsErrorFree}",
+    QrrQCode code => $"Version {code.Version}, error-free: {code.IsErrorFree}",
     QrrQError error => error.Message,   // PayloadTooLong | IncompatibleEccLevels | NoSolutionFound
 };
 ```
 
-### Kommandozeile
+### Command line
 
 ```bash
-qrrq "Falsche Fährte" "Code: 4711" -o raetsel --svg
-# → raetsel.png, raetsel.mirrored.png, raetsel.svg, raetsel.mirrored.svg + Konsolenvorschau
+qrrq "Wrong trail" "Code: 4711" -o puzzle --svg
+# → puzzle.png, puzzle.mirrored.png, puzzle.svg, puzzle.mirrored.svg + console preview
 
-qrrq --selftest 200        # Zufalls-Rundreisen inkl. Beschädigungstest
+qrrq --selftest 200        # random round trips including a damage test
 
-# aus dem Quellcode:
-dotnet run --project src/QrrQ.Cli -- "Falsche Fährte" "Code: 4711" -o raetsel --svg
+# straight from source:
+dotnet run --project src/QrrQ.Cli -- "Wrong trail" "Code: 4711" -o puzzle --svg
 ```
 
-## Optionen
+## Options
 
-| Option | Standard | Bedeutung |
+| Option | Default | Meaning |
 |---|---|---|
-| `NormalEcc` / `MirroredEcc` | `null` (automatisch M, dann L) | Fehlerkorrektur je Richtung |
-| `MinVersion` / `MaxVersion` | 1 / 40 | erlaubter Größenbereich |
-| `MaxCorrectedCodewords` | 0 | Codewörter, die pro Richtung schon ab Werk korrigiert werden dürfen (siehe unten) |
-| `Seed` | fest | gleiche Eingabe + gleicher Seed = gleicher Code |
-| `AttemptsPerCandidate` | 2 | Zufallsbelegungen pro Maskenpaar; die optisch beste gewinnt |
+| `NormalEcc` / `MirroredEcc` | `null` (automatic M, then L) | error correction per direction |
+| `MinVersion` / `MaxVersion` | 1 / 40 | allowed size range |
+| `MaxCorrectedCodewords` | 0 | codewords that may be pre-corrected per direction (see below) |
+| `Seed` | fixed | same input + same seed = same code |
+| `AttemptsPerCandidate` | 2 | random fill attempts per mask pair; the best-looking one wins |
 
-## Mathematischer Hintergrund
+## Mathematical background
 
-### 1. Raster, Spiegel und Transposition
+### 1. Grid, mirror and transposition
 
-Ein QR-Symbol der Version $v$ ist ein quadratisches Raster
+A QR symbol of version $v$ is a square grid
 
 $$M \in \mathbb{F}_2^{n \times n}, \qquad n = 17 + 4v,$$
 
-wobei $M_{ij} = 1$ ein dunkles Modul bedeutet. Die gespiegelte Ansicht ist die horizontale Spiegelung
+where $M_{ij} = 1$ means a dark module. The mirrored view is the horizontal flip
 
 $$F(M)_{ij} = M_{i,\,n-1-j}.$$
 
-Für die Transposition $T(M)_{ij} = M_{ji}$ gilt: Spiegeln ist Transponieren plus eine starre Drehung um 90°,
+For the transpose $T(M)_{ij} = M_{ji}$ we get: mirroring is transposing plus a rigid 90° rotation,
 
 $$F(M) = R_{90}\bigl(T(M)\bigr).$$
 
-Scanner gleichen Drehungen von selbst aus. Gesucht ist deshalb ein Raster $M$, bei dem $M$ den Text A und $T(M)$ den Text B ergibt. Das ist die ganze Idee in einer Zeile:
+Scanners compensate rotations by themselves. So we are looking for a grid $M$ such that $M$ yields text A and $T(M)$ yields text B. That is the whole idea in one line:
 
 $$R(M) = A, \qquad R\bigl(T(M)\bigr) = B,$$
 
-wobei $R$ den vollständigen Lesepfad eines Decoders bezeichnet (Lage normalisieren, Format lesen, demaskieren, Reed-Solomon korrigieren, Segmente parsen).
+where $R$ denotes the complete read path of a decoder (normalize position, read format, unmask, Reed-Solomon correct, parse segments).
 
-### 2. Symmetrische Funktionsmuster
+### 2. Symmetric function patterns
 
-Finder-, Timing- und Ausrichtungsmuster sowie die reservierten Bereiche für Format- und Versionsinformation liegen symmetrisch zur Hauptdiagonalen. Unter $T$ bildet die Menge der Funktionsmodule also auf sich selbst ab; die **Datenmodule werden nur permutiert**. Diese Permutation $\sigma$ ist eine Involution,
+Finder, timing and alignment patterns as well as the reserved areas for format and version information are symmetric about the main diagonal. Hence under $T$ the set of function modules maps onto itself; the **data modules are merely permuted**. This permutation $\sigma$ is an involution,
 
 $$\sigma^2 = \mathrm{id},$$
 
-denn zweimaliges Transponieren ist die Identität. Sie ist der einzige Ort im Verfahren, an dem die Geometrie des QR-Codes eingeht.
+because transposing twice is the identity. It is the only place in the procedure where the geometry of the QR code enters.
 
-### 3. Ein lineares Gleichungssystem über GF(2)
+### 3. A linear system over GF(2)
 
-Sei $x_k$ das $k$-te Datenmodul in Lesereihenfolge (unten rechts beginnend, im Zickzack nach oben). Die Richtung A liest den Strombit $k$ als
+Let $x_k$ be the $k$-th data module in read order (starting at the bottom right, zigzag upwards). Direction A reads stream bit $k$ as
 
 $$a_k = x_k \oplus m_A(k),$$
 
-die gespiegelte Richtung B liest dieselbe Zelle an der Position $\sigma(k)$:
+while the mirrored direction B reads the same cell at the position $\sigma(k)$:
 
 $$b_k = x_{\sigma(k)} \oplus m_B(k).$$
 
-Dabei sind $m_A, m_B \in \mathbb{F}_2$ die Werte der acht Maskenformeln (Zeile $i$, Spalte $j$), zum Beispiel
+Here $m_A, m_B \in \mathbb{F}_2$ are the values of the eight mask formulas (row $i$, column $j$), for example
 
 $$m_0(i,j) = (i+j) \bmod 2, \qquad m_4(i,j) = \left(\left\lfloor i/2 \right\rfloor + \left\lfloor j/3 \right\rfloor\right) \bmod 2.$$
 
-Die Unbekannten sind die $x_k$. Gefordert ist:
+The unknowns are the $x_k$. We require:
 
-1. **Die Nachrichtenbits** beider Texte stehen am Anfang ihres Datenstroms. Jedes Nachrichtenbit ist eine feste lineare Gleichung $x_k \oplus m_A(k) = a_k$ bzw. $x_{\sigma(k)} \oplus m_B(k) = b_k$.
-2. **Alle Reed-Solomon-Syndrome** beider Richtungen sind null.
+1. **The message bits** of both texts sit at the start of their data stream. Each message bit is a fixed linear equation $x_k \oplus m_A(k) = a_k$ or $x_{\sigma(k)} \oplus m_B(k) = b_k$.
+2. **All Reed-Solomon syndromes** of both directions are zero.
 
-Beides zusammen ist ein lineares Gleichungssystem über $\mathbb{F}_2$. Die Freiheitsgrade stecken in den Füllbytes hinter dem Terminator – Bits, die kein Scanner auswertet. Deshalb sind beide Richtungen **vollständig fehlerfreie Reed-Solomon-Codewörter**, und die volle Fehlerkorrektur bleibt erhalten.
+Together this is a linear system over $\mathbb{F}_2$. The degrees of freedom live in the padding bytes behind the terminator — bits no scanner evaluates. That is why both directions are **completely error-free Reed-Solomon codewords** and the full error correction remains available.
 
-### 4. Reed-Solomon als acht Bitgleichungen
+### 4. Reed-Solomon as eight bit equations
 
-Ein Codewort $c(x) = \sum_i c_i x^i$ mit $c_i \in \mathrm{GF}(2^8)$ ist genau dann gültig, wenn alle Syndrome verschwinden:
+A codeword $c(x) = \sum_i c_i x^i$ with $c_i \in \mathrm{GF}(2^8)$ is valid exactly when all syndromes vanish:
 
 $$S_j = c(\alpha^j) = \sum_i c_i\,\alpha^{ij} = 0, \qquad j = 0,\dots,e-1,$$
 
-wobei $e$ die Zahl der Prüfcodewörter pro Block ist. QrrQ rechnet in $\mathrm{GF}(2^8)$ mit dem QR-Polynom
+where $e$ is the number of check codewords per block. QrrQ computes in $\mathrm{GF}(2^8)$ using the QR polynomial
 
 $$x^8 + x^4 + x^3 + x^2 + 1 \quad (\texttt{0x11D}), \qquad \alpha = 2.$$
 
-Multiplikation mit der Konstanten $\alpha^{ij}$ ist eine $\mathbb{F}_2$-lineare Abbildung. Jedes Syndrom $S_j \in \mathrm{GF}(2^8)$ zerfällt daher in **acht Bitgleichungen**. Zusammen mit den Nachrichtenbits ergibt das ein Gleichungssystem, dessen rechte Seite für beide Leserichtungen festliegt.
+Multiplication by the constant $\alpha^{ij}$ is an $\mathbb{F}_2$-linear map. Each syndrome $S_j \in \mathrm{GF}(2^8)$ therefore splits into **eight bit equations**. Together with the message bits this yields a linear system whose right-hand side is fixed for both reading directions.
 
-### 5. Kapazitätsbedingung
+### 5. Capacity condition
 
-Sei $D_A, D_B$ die Datencodewörter-Kapazität der beiden Richtungen und $C$ die Gesamtzahl der Codewörter des Symbols. Die Konstruktion braucht Platz für zwei Nutzlasten und zwei Sätze Prüfbits. Notwendig ist
+Let $D_A, D_B$ be the data codeword capacity of the two directions and $C$ the total number of codewords in the symbol. The construction needs room for two payloads and two sets of check bits. A necessary condition is
 
 $$D_A + D_B > C.$$
 
-Damit funktionieren L/L, M/L und M/M, ebenso Q/L und H/L; Q/M geht nur knapp. Q/Q und H mit M, Q oder H haben keinen Platz und werden als `IncompatibleEccLevels` gemeldet. Ist die Bedingung erfüllt, heißt das noch nicht, dass das Gleichungssystem lösbar ist – deshalb sucht QrrQ zusätzlich über Versionen und Maskenpaare.
+Hence L/L, M/L and M/M work, as do Q/L and H/L; Q/M only barely. Q/Q and H with M, Q or H have no room and are reported as `IncompatibleEccLevels`. Satisfying the condition does not yet mean the system is solvable — that is why QrrQ additionally searches over versions and mask pairs.
 
-### 6. Die gemeinsame Ecke
+### 6. The shared corner
 
-Beide Datenströme beginnen unten rechts, und diese Ecke ist ein **Fixpunkt der Transposition**. Module, die *beide* Nachrichten festlegen, müssen daher übereinstimmen. Das regeln die Wahl der Masken und die Wahl der Kodierung: Ein Text kann in einem oder in zwei Segmenten stehen, Scanner setzen das wieder zum selben Text zusammen. Die Zahl solcher Konfliktmodule wächst ungefähr mit
+Both data streams start at the bottom right, and that corner is a **fixed point of the transposition**. Modules that determine *both* messages therefore have to agree. This is handled by the choice of masks and the choice of encoding: a text may live in one segment or in two, and scanners reassemble them into the same text. The number of such conflict modules grows approximately with
 
 $$\frac{|A| \cdot |B|}{n^2}.$$
 
-Lange Texte brauchen deshalb größere Versionen. Alternativ darf man mit `MaxCorrectedCodewords > 0` einzelne Konflikt-Codewörter einer Seite opfern, die der Scanner dann per Fehlerkorrektur repariert. Das ergibt deutlich kleinere Codes, kostet aber etwas Robustheit.
+Long texts therefore need larger versions. Alternatively `MaxCorrectedCodewords > 0` allows sacrificing individual conflict codewords of one side, which the scanner then repairs via error correction. That yields noticeably smaller codes but costs some robustness.
 
-### 7. Formatinformation
+### 7. Format information
 
-Die Formatinformation ist ein BCH(15,5)-Code mit Hamming-Abstand 7; er korrigiert bis zu 3 Bitfehler. Keines der 32 gültigen Formatwörter ist bitweise umgekehrt wieder gültig, denn der Hamming-Abstand ist immer ≥ 3. Jede Richtung bekommt daher eine eigene Kopie. Die jeweils fremde Kopie wird so gesetzt, dass sie von *allen* Formatwörtern mindestens 4 Bit entfernt ist. Dann verwerfen Decoder sie, statt sich in die falsche Richtung locken zu lassen. Die Regeln dafür wurden an echten Decodern gemessen:
+Format information is a BCH(15,5) code with Hamming distance 7; it corrects up to 3 bit errors. None of the 32 valid format words is valid again when bitwise inverted, since the Hamming distance is always ≥ 3. Each direction therefore gets its own copy. The respective foreign copy is placed so that it is at least 4 bits away from *all* format words. Decoders then discard it instead of being lured into the wrong direction. These rules were measured against real decoders:
 
-- OpenCV scheitert, sobald irgendeine Kopie zu einem falschen Formatwort korrigierbar ist.
-- ZBar kombiniert die Hälften beider Kopien per Mehrheitsentscheid.
-- zxing-cpp bewertet auch die gespiegelte Lesart.
+- OpenCV fails as soon as any copy is correctable into a wrong format word.
+- ZBar combines the halves of both copies by majority vote.
+- zxing-cpp also evaluates the mirrored reading.
 
-Meist liest jede Richtung ihr Formatwort deshalb mit **1 Bit Abweichung**. Die Formatinformation verträgt bis zu 3 Bitfehler, das korrigiert also jeder Scanner. `NormalFormatBitErrors` und `MirroredFormatBitErrors` zeigen den Wert an.
+Mostly each direction therefore reads its format word with **1 bit of deviation**. Format information tolerates up to 3 bit errors, so every scanner corrects that. `NormalFormatBitErrors` and `MirroredFormatBitErrors` expose the value.
 
-### 8. Lösen mit Gauß-Jordan über GF(2)
+### 8. Solving with Gauss-Jordan over GF(2)
 
-Die Koeffizientenmatrix ist für alle acht Masken der Richtung A und alle acht Masken der Richtung B identisch – nur die rechte Seite hängt vom Maskenpaar ab. QrrQ packt die 64 rechten Seiten in die 64 Bits eines `ulong` und führt **eine einzige** Gauß-Jordan-Elimination über Bitsets durch. Danach steht für jedes der $8 \times 8 = 64$ Maskenpaare fest, ob es eine Lösung gibt; die optisch beste gewinnt (Strafpunkte nach ISO/IEC 18004). Die Maskenbewertung ist transpositionsinvariant und gilt damit für beide Leserichtungen.
+The coefficient matrix is identical for all eight masks of direction A and all eight masks of direction B — only the right-hand side depends on the mask pair. QrrQ packs the 64 right-hand sides into the 64 bits of a `ulong` and performs **a single** Gauss-Jordan elimination over bitsets. Afterwards it is known for each of the $8 \times 8 = 64$ mask pairs whether a solution exists; the best-looking one wins (penalty score per ISO/IEC 18004). The mask evaluation is transposition-invariant and thus valid for both reading directions.
 
-### 9. Umlaute und Emojis
+### 9. Umlauts and emojis
 
-Nicht-ASCII-Text wird als UTF-8 mit ECI-Kennung kodiert. Ohne Kennung zeigt ZBar Zeichensalat. OpenCV verarbeitet ECI-Codes über einen eigenen Pfad, der zwei Eigenheiten hat: Er liest über den Terminator hinaus bis zur Bytegrenze, und nach einem ECI-Wechsel wertet er nur das letzte Segment aus. QrrQ setzt deshalb die Bits bis zur Bytegrenze immer auf 0 und kodiert UTF-8-Texte stets in einem einzigen Segment.
+Non-ASCII text is encoded as UTF-8 with an ECI indicator. Without the indicator ZBar shows mojibake. OpenCV handles ECI codes through its own path, which has two quirks: it reads past the terminator up to the byte boundary, and after an ECI switch it only evaluates the last segment. QrrQ therefore always sets the bits up to the byte boundary to 0 and always encodes UTF-8 texts in a single segment.
 
-## Tests und Verifikation
+## Tests and verification
 
-**Unit-Tests** (`dotnet test`): 37 Tests decken Rundläufe in beide Richtungen, alle Drehungen, UTF-8/Emoji, Determinismus über den Seed, Versionsgrenzen, ECC-Kombinationen, Vorkorrektur, Fehlerfälle, PNG/SVG/Text-Ausgabe und die Rastertransformationen ab.
+**Unit tests** (`dotnet test`): 37 tests cover round trips in both directions, all rotations, UTF-8/emoji, determinism via the seed, version limits, ECC combinations, pre-correction, error cases, PNG/SVG/text output and the grid transformations.
 
-**Selbsttest** (`qrrq --selftest 200`): erzeugt zufällige Paare, liest beide Richtungen mit dem eingebauten Decoder, prüft eine gedrehte Ansicht und kippt zusätzlich Datenmodule, um die Fehlerkorrektur zu belasten.
+**Self-test** (`qrrq --selftest 200`): generates random pairs, reads both directions with the built-in decoder, checks a rotated view and additionally flips data modules to stress the error correction.
 
-**Unabhängige Decoder** (aktuelle Messung, 8 repräsentative Codes, Version 4–14, ASCII, Umlaute, Emoji, WLAN-String, Vorkorrektur):
+**Independent decoders** (latest measurement, 8 representative codes, versions 4–14, ASCII, umlauts, emoji, Wi-Fi string, pre-correction):
 
-| Ansicht | OpenCV 5.1 | zxing-cpp |
+| View | OpenCV 5.1 | zxing-cpp |
 |---|---|---|
 | normal | 8/8 | 8/8 |
-| gespiegelt | 8/8 | 8/8 |
-| gespiegelt + 90°/180°/270° | 8/8 | 8/8 |
-| gespiegelt + 15° | 7/8 | 8/8 |
+| mirrored | 8/8 | 8/8 |
+| mirrored + 90°/180°/270° | 8/8 | 8/8 |
+| mirrored + 15° | 7/8 | 8/8 |
 
-OpenCV verliert bei einem Code und 15° den Detektor, ein paar Grad weiter klappt es wieder – dasselbe Verhalten zeigt OpenCV auch bei gewöhnlichen QR-Codes. Eine frühere Messreihe mit 108 Codes (Versionen 1–16, ASCII und Umlaute, mit und ohne Vorkorrektur, je 5 Ansichten) ergab für zxing-cpp und ZBar 100 % in allen Ansichten und für OpenCV 100 % ohne Drehung.
+OpenCV loses the detector on one code at 15° and recovers a few degrees further on — the same behaviour OpenCV shows for ordinary QR codes. An earlier series with 108 codes (versions 1–16, ASCII and umlauts, with and without pre-correction, 5 views each) gave 100 % in all views for zxing-cpp and ZBar, and 100 % without rotation for OpenCV.
 
-## Grenzen und Hinweise
+## Limits and caveats
 
-- **Größe:** Kurze Texte (Codes, Hinweise) passen in Version 1–7. Zwei URLs mit je ~20 Zeichen brauchen fehlerfrei etwa Version 10 (57 × 57). Mit `MaxCorrectedCodewords = 4` reicht oft Version 5–7.
-- **Kamera-Apps:** Die Scanner von iOS und Android sind proprietär und hier nicht testbar. Bitte die fertigen Codes mit den Geräten prüfen, die später wirklich scannen sollen.
-- **Kein Sicherheitsmerkmal:** Jeder kann einen Code spiegeln. QrrQ versteckt Informationen vor flüchtigen Blicken, nicht vor Angreifern.
-- **Druck:** Auf Folie oder Glas ist die Rückseite automatisch das Spiegelbild, ein Spiegel ist dann gar nicht nötig.
-- **Druckgröße:** Mindestens 4 Module Ruhezone einhalten (Standard) und den Code nicht unter ca. 2 cm Kantenlänge drucken.
+- **Size:** short texts (codes, hints) fit into versions 1–7. Two URLs of ~20 characters each need about version 10 (57 × 57) when error-free. With `MaxCorrectedCodewords = 4`, versions 5–7 often suffice.
+- **Camera apps:** the iOS and Android scanners are proprietary and cannot be tested here. Please check the finished codes with the devices that will actually scan them.
+- **Not a security feature:** anyone can mirror a code. QrrQ hides information from casual glances, not from attackers.
+- **Printing:** on a transparency or glass the back side is automatically the mirror image, so no mirror is needed at all.
+- **Print size:** keep at least a 4-module quiet zone (standard) and do not print the code below roughly 2 cm edge length.
 
-## Ideen für den Einsatz
+## Ideas for use
 
-- **Escape Rooms und Schnitzeljagden:** Der „Fehlhinweis“ lässt sich normal scannen, die Lösung erst mit dem Spiegel im Raum.
-- **Folien und Glas:** Ein Sticker an der Glastür zeigt außen „Öffnungszeiten“ und innen „WLAN fürs Team“.
-- **Selfie-Effekt:** Ein T-Shirt- oder Poster-Code liefert über die gespiegelte Frontkamera einen Bonusinhalt.
-- **Geocaching (Mystery-Caches), Adventskalender, Spieleverpackungen:** eine zweite Ebene für Neugierige.
-- **Kunst und Installationen:** Spiegelungen in Wasser, Schaufenstern, Rückprojektion.
-- **Unterricht:** ein greifbares Beispiel für lineare Algebra über GF(2) und Reed-Solomon-Codes.
+- **Escape rooms and scavenger hunts:** the "wrong hint" scans normally, the real solution only with the mirror found in the room.
+- **Transparencies and glass:** a sticker on a glass door shows "opening hours" outside and "Wi-Fi for the team" inside.
+- **Selfie effect:** a T-shirt or poster code delivers bonus content through the mirrored front camera.
+- **Geocaching (mystery caches), advent calendars, game packaging:** a second layer for the curious.
+- **Art and installations:** reflections in water, shop windows, rear projection.
+- **Teaching:** a hands-on example of linear algebra over GF(2) and Reed-Solomon codes.
 
-## Projektstruktur
+## Project structure
 
 ```
 QrrQ.slnx
-src/QrrQ/                 Bibliothek (NuGet-Paket „QrrQ“)
-  QrrQGenerator.cs        öffentliche API (Create / TryCreate)
-  QrrQCode.cs             Ergebnis: PNG, SVG, Text, Matrix, Verify()
+src/QrrQ/                 library (NuGet package "QrrQ")
+  QrrQGenerator.cs        public API (Create / TryCreate)
+  QrrQCode.cs             result: PNG, SVG, text, matrix, Verify()
   QrrQResult.cs           union QrrQResult(QrrQCode, QrrQError)       – C# 15
-  QrrQError.cs            closed record QrrQError + Fälle              – C# 15
-  QrMatrix.cs             Modulraster, Transpose/Flip/Rotate, Packen
-  Codec/MirrorSolver.cs   Kern: GF(2)-System, Masken-Spuren, Ecken-Konflikte
-  Codec/FormatPlanner.cs  scannerfeste Belegung der Formatkopien
-  Algebra/                GF(256), GF(2)-Elimination, Reed-Solomon (BM/Chien/Forney)
-  Reading/                eingebauter Decoder (zur Verifikation)
-  Rendering/              PNG (ohne Abhängigkeiten), SVG, Konsole
-src/QrrQ.Cli/             Kommandozeile „qrrq“ (dotnet-Tool)
-tests/QrrQ.Tests/         xUnit-Tests (37)
-.github/workflows/ci.yml  Build + Tests bei Push und Pull Request
-.github/workflows/nuget.yml  Packen und Veröffentlichen der NuGet-Pakete
+  QrrQError.cs            closed record QrrQError + cases              – C# 15
+  QrMatrix.cs             module grid, Transpose/Flip/Rotate, packing
+  Codec/MirrorSolver.cs   core: GF(2) system, mask traces, corner conflicts
+  Codec/FormatPlanner.cs  scanner-proof placement of the format copies
+  Algebra/                GF(256), GF(2) elimination, Reed-Solomon (BM/Chien/Forney)
+  Reading/                built-in decoder (for verification)
+  Rendering/              PNG (no dependencies), SVG, console
+src/QrrQ.Cli/             command line "qrrq" (dotnet tool)
+tests/QrrQ.Tests/         xUnit tests (37)
+.github/workflows/ci.yml  build + tests on push and pull request
+.github/workflows/nuget.yml  pack and publish the NuGet packages
+.github/workflows/native.yml Native AOT binaries for four platforms
 ```
 
-Verwendete Sprachfeatures: Union-Typen, geschlossene Hierarchien, `with(...)`-Argumente in Collection Expressions, benanntes `break` (C# 15), Extension-Member und das `field`-Schlüsselwort (C# 14) sowie Primärkonstruktoren und Collection Expressions.
+Language features used: union types, closed hierarchies, `with(...)` arguments in collection expressions, labelled `break` (C# 15), extension members and the `field` keyword (C# 14), plus primary constructors and collection expressions.
 
-## Entwicklung
+## Development
 
 ```bash
 dotnet restore
@@ -235,21 +258,35 @@ dotnet run --project src/QrrQ.Cli -c Release -- --selftest 200
 
 dotnet pack src/QrrQ -c Release -o artifacts
 dotnet pack src/QrrQ.Cli -c Release -o artifacts
+
+# native single file, e.g. for this machine
+dotnet publish src/QrrQ.Cli -c Release -r osx-arm64 -p:PublishAot=true -o artifacts/native
 ```
 
-### Veröffentlichung
+### Publishing
 
-Das Paket erscheint auf nuget.org unter dem Publisher **Agredo**. Die Metadaten (`Authors`, `Company`, `RepositoryUrl`, `PackageProjectUrl`, `PackageIcon`, `PackageTags`, `Description`) stehen zentral in `Directory.Build.props` bzw. in den beiden Projektdateien.
+The package appears on nuget.org under the publisher **Agredo**. The metadata (`Authors`, `Company`, `RepositoryUrl`, `PackageProjectUrl`, `PackageIcon`, `PackageTags`, `Description`) lives centrally in `Directory.Build.props` and in the two project files.
 
-Der Workflow `.github/workflows/nuget.yml` baut, testet und packt beide Pakete und lädt sie als Artefakt hoch. Ausgelöst wird er durch einen Tag `v*` oder manuell über „Run workflow“:
+The workflow `.github/workflows/nuget.yml` builds, tests and packs both packages and uploads them as an artifact. It is triggered by a `v*` tag or manually via "Run workflow":
 
 ```bash
 git tag v1.0.0
 git push origin v1.0.0
 ```
 
-Zum Veröffentlichen muss im Repository das Secret `NUGET_API_KEY` hinterlegt sein (nuget.org → API Keys). Ohne Secret wird nur gepackt und das Artefakt bereitgestellt. Bei einem Tag wird zusätzlich ein GitHub-Release mit den Paketdateien angelegt.
+To publish, the repository needs the secret `NUGET_API_KEY` (nuget.org → API keys). Without the secret it only packs and provides the artifact. On a tag it additionally creates a GitHub release with the package files.
 
-## Lizenz
+## Origin and attribution
 
-MIT – siehe [LICENSE](LICENSE).
+QrrQ — idea and implementation by **Christian Müller (Agredo)**, 2026.
+
+The MIT license permits any use, modification and redistribution, including commercially and without consideration. It only requires that the copyright and license notice are retained when redistributing. So that the origin stays visible, two more files ship with the project:
+
+- [`NOTICE`](NOTICE) — provenance notice, bilingual
+- [`CITATION.cff`](CITATION.cff) — citation metadata (GitHub shows a "Cite this repository" button)
+
+If you redistribute QrrQ, fork it or embed it in a product, please carry the reference to the idea and its author along. The idea behind "one QR code, two readings" is deliberately documented in full in [Mathematical background](#mathematical-background) and is free to build upon — just please do not obscure where it came from.
+
+## License
+
+MIT — see [LICENSE](LICENSE) and [NOTICE](NOTICE).

@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "Wenn du QrrQ in einem Projekt, einer Arbeit oder einer Installation verwendest, zitiere es bitte mit diesen Angaben. / If you use QrrQ in a project, paper or installation, please cite it with these details."
+title: QrrQ
+abstract: >-
+  QrrQ erzeugt QR-Codes, die normal gescannt einen Text und gespiegelt einen
+  zweiten, ebenfalls gültigen Text zeigen. Beide Lesarten sind nach
+  ISO/IEC 18004 gültig und mit voller Reed-Solomon-Fehlerkorrektur ausgestattet.
+type: software
+authors:
+  - family-names: Müller
+    given-names: Christian
+    alias: Agredo
+version: 1.0.0
+date-released: 2026-11-25
+license: MIT
+url: https://github.com/Agredo/QrrQ
+repository-code: https://github.com/Agredo/QrrQ
+keywords:
+  - QR-Code
+  - Spiegelung
+  - Reed-Solomon
+  - Fehlerkorrektur
+  - Steganographie

@@ -1,0 +1,114 @@
+name: Native AOT
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  native:
+    name: ${{ matrix.rid }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rid: win-x64
+            os: windows-latest
+            exe: .exe
+          - rid: win-arm64
+            os: windows-11-arm
+            exe: .exe
+          - rid: linux-x64
+            os: ubuntu-latest
+            exe: ''
+          - rid: osx-arm64
+            os: macos-latest
+            exe: ''
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 11.0.x
+
+      - name: Linux-Build-Abhängigkeiten
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y clang zlib1g-dev
+
+      - name: Version bestimmen
+        id: version
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            echo "value=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=0.0.0-dev.${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+          fi
+          echo "Version: $(grep '^value=' "$GITHUB_OUTPUT")"
+
+      - name: Native AOT bauen
+        shell: bash
+        run: >
+          dotnet publish src/QrrQ.Cli/QrrQ.Cli.csproj
+          -c Release -r ${{ matrix.rid }}
+          -p:PublishAot=true
+          -p:Version=${{ steps.version.outputs.value }}
+          -o out
+
+      - name: Selbsttest der Binärdatei
+        shell: bash
+        run: ./out/QrrQ.Cli${{ matrix.exe }} --selftest 25
+
+      - name: Paketieren (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $name = "qrrq-${{ steps.version.outputs.value }}-${{ matrix.rid }}"
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Copy-Item out/QrrQ.Cli.exe dist/qrrq.exe
+          Copy-Item LICENSE, NOTICE dist/
+          Compress-Archive -Path dist/* -DestinationPath "$name.zip"
+          Get-Item "$name.zip" | Select-Object Name, Length
+
+      - name: Paketieren (Linux/macOS)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          name="qrrq-${{ steps.version.outputs.value }}-${{ matrix.rid }}"
+          mkdir -p dist
+          cp out/QrrQ.Cli dist/qrrq
+          cp LICENSE NOTICE dist/
+          chmod +x dist/qrrq
+          tar -czf "$name.tar.gz" -C dist qrrq LICENSE NOTICE
+          ls -l "$name.tar.gz"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: qrrq-${{ matrix.rid }}
+          if-no-files-found: ignore
+          path: |
+            qrrq-*.zip
+            qrrq-*.tar.gz
+
+      - name: An das Release anhängen
+        if: github.ref_type == 'tag'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="$GITHUB_REF_NAME"
+          for attempt in 1 2 3 4 5; do
+            if gh release view "$tag" > /dev/null 2>&1; then break; fi
+            gh release create "$tag" --title "QrrQ $tag" --generate-notes --verify-tag && break
+            sleep 5
+          done
+          files=(qrrq-*)
+          gh release upload "$tag" "${files[@]}" --clobber

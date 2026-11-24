@@ -3,6 +3,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <RootNamespace>QrrQ.Cli</RootNamespace>
+    <!-- Assembly bleibt QrrQ.Cli: ein AssemblyName "qrrq" würde unter Windows mit QrrQ.dll kollidieren -->
     <!-- als .NET-Tool installierbar: dotnet tool install -g QrrQ.Cli → Befehl "qrrq" -->
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>qrrq</ToolCommandName>
@@ -12,6 +13,34 @@
     <InvariantGlobalization>true</InvariantGlobalization>
     <Description>Kommandozeile für QrrQ: erzeugt QR-Codes, die normal gescannt einen Text und gespiegelt einen zweiten zeigen – als PNG und SVG, inklusive eingebautem Selbsttest. Installation: dotnet tool install -g QrrQ.Cli, Aufruf: qrrq "normal" "gespiegelt".</Description>
     <PackageTags>qr;qrcode;mirror;spiegel;escape-room;puzzle;dotnet-tool;cli;svg;png</PackageTags>
+  </PropertyGroup>
+
+  <!--
+    Native AOT: dotnet publish src/QrrQ.Cli -c Release -r <rid> -p:PublishAot=true
+    Die Schalter darunter gelten nur für diesen Publish und verkleinern die Binärdatei.
+    Als .NET-Tool bleibt das Paket framework-dependent (AOT-Binaries gibt es im Release).
+  -->
+  <PropertyGroup Condition="'$(PublishAot)' == 'true'">
+    <IlcOptimizationPreference>Size</IlcOptimizationPreference>
+    <TrimMode>full</TrimMode>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <PredefinedCulturesOnly>true</PredefinedCulturesOnly>
+    <UseSystemResourceKeys>true</UseSystemResourceKeys>
+    <StackTraceSupport>false</StackTraceSupport>
+    <IlcGenerateStackTraceData>false</IlcGenerateStackTraceData>
+    <IlcGenerateCompleteTypeMetadata>false</IlcGenerateCompleteTypeMetadata>
+    <IlcDisableReflection>true</IlcDisableReflection>
+    <EventSourceSupport>false</EventSourceSupport>
+    <MetadataUpdaterSupport>false</MetadataUpdaterSupport>
+    <DebuggerSupport>false</DebuggerSupport>
+    <HttpActivityPropagationSupport>false</HttpActivityPropagationSupport>
+    <MetricsSupport>false</MetricsSupport>
+    <EnableUnsafeBinaryFormatterSerialization>false</EnableUnsafeBinaryFormatterSerialization>
+    <EnableUnsafeUTF7Encoding>false</EnableUnsafeUTF7Encoding>
+    <EnableUnsafeXslt>false</EnableUnsafeXslt>
+    <XmlResolverIsNetworkingEnabledByDefault>false</XmlResolverIsNetworkingEnabledByDefault>
+    <NativeDebugSymbols>false</NativeDebugSymbols>
+    <StripSymbols>true</StripSymbols>
   </PropertyGroup>
 
   <ItemGroup>
