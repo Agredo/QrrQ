@@ -7,7 +7,7 @@
 
 **Deutsch** · [English](README.md)
 
-**QrrQ** erzeugt QR-Codes mit zwei Inhalten: Normal gescannt liefern sie Text A, im Spiegel (oder von der Rückseite einer Folie) liefern sie Text B. Beide Lesarten sind gültige QR-Codes nach ISO/IEC 18004. Es braucht keine spezielle App, jeder normale Scanner reicht.
+**QrrQ** erzeugt QR-Codes mit zwei Inhalten: Normal gescannt liefern sie Text A, im Spiegel (oder von der Rückseite einer Folie) liefern sie Text B. Die Daten sind in beiden Leserichtungen fehlerfreie Reed-Solomon-Codewörter (bei `MaxCorrectedCodewords = 0`), und gängige Scanner lesen beide Richtungen regulär. Streng normkonform nach ISO/IEC 18004 sind die Codes trotzdem nicht: Die Formatinformation weicht absichtlich ab (meist 1 Bit pro Richtung), und die Füllbytes folgen nicht dem Standardmuster `0xEC/0x11`. Es braucht keine spezielle App, jeder normale Scanner reicht.
 
 - .NET 11 / C# 15, keine Laufzeitabhängigkeiten (eigener QR-Encoder, Reed-Solomon, PNG- und SVG-Ausgabe)
 - API: zwei Strings rein, ein Code mit `byte[]`-PNG, SVG oder Modulraster raus
@@ -260,6 +260,9 @@ dotnet run --project src/QrrQ.Cli -c Release -- --selftest 200
 
 dotnet pack src/QrrQ -c Release -o artifacts
 dotnet pack src/QrrQ.Cli -c Release -o artifacts
+
+# natives Einzelbinary, z. B. für diese Maschine
+dotnet publish src/QrrQ.Cli -c Release -r osx-arm64 -p:PublishAot=true -o artifacts/native
 ```
 
 ### Veröffentlichung
@@ -277,14 +280,35 @@ Zum Veröffentlichen muss im Repository das Secret `NUGET_API_KEY` hinterlegt se
 
 ## Herkunft und Namensnennung
 
-QrrQ – Idee und Umsetzung: **Christian Müller (Agredo)**, 2026.
+QrrQ – Umsetzung: **Christian Müller (Agredo)**, 2026. Die Grundidee doppelseitiger QR-Codes wurde zuerst von Alexey Tikhonov (2019) beschrieben, siehe „Verwandte Arbeiten“.
 
 Die MIT-Lizenz erlaubt jede Nutzung, Veränderung und Weitergabe, auch kommerziell und ohne Gegenleistung. Sie verlangt nur, dass Copyright- und Lizenzhinweis bei einer Weitergabe erhalten bleiben. Damit die Herkunft sichtbar bleibt, liegen zusätzlich bei:
 
 - [`NOTICE`](NOTICE) – Herkunftshinweis, zweisprachig
 - [`CITATION.cff`](CITATION.cff) – Zitiermetadaten (GitHub zeigt damit einen „Cite this repository“-Knopf)
 
-Wer QrrQ weitergibt, forkt oder in ein Produkt einbaut, möge den Hinweis auf Idee und Urheber mitführen. Die Idee hinter „ein QR-Code, zwei Lesarten“ ist im Abschnitt [Mathematischer Hintergrund](#mathematischer-hintergrund) bewusst vollständig offengelegt und darf weiterentwickelt werden – nur bitte nicht ohne den Ursprung zu nennen.
+Wer QrrQ weitergibt, forkt oder in ein Produkt einbaut, möge den Hinweis auf Urheber und Herkunft mitführen. Die Idee hinter „ein QR-Code, zwei Lesarten“ ist im Abschnitt [Mathematischer Hintergrund](#mathematischer-hintergrund) bewusst vollständig offengelegt und darf weiterentwickelt werden – nur bitte nicht ohne den Ursprung zu nennen.
+
+## Verwandte Arbeiten
+
+QrrQ ist nicht der erste Ansatz für doppelseitige QR-Codes:
+
+- **Alexey Tikhonov: „On Double-Sided QR-Codes“** (arXiv:1902.05722, SIGBOVIK 2019) – die erste dokumentierte Beschreibung der Idee, mit einem Brute-Force- und einem analytischen Verfahren. https://arxiv.org/abs/1902.05722
+- **Joris van Rantwijk: „Double-sided QR codes“** (30.06.2025) – ein sehr ähnlicher Ansatz: ein gemeinsames GF(2)-Gleichungssystem über die Syndrom-Bits beider Nachrichten, eine palindromische Formatinformation und absichtliche, per Fehlerkorrektur reparierte Fehler an den Überlappungen. Nur Fehlerkorrekturstufe L, Versionen 2–5. Online-Generator verfügbar. https://jorisvr.nl/article/double-sided-qrcodes · https://jorisvr.nl/article/make-mirror-qrcode
+
+Andere Prinzipien mit zwei Inhalten in einem Code (nicht spiegelbasiert):
+
+- Blickwinkelabhängig: „Dueling QR Codes“ (arXiv:2503.13458) und das Beispiel auf Hackaday (https://hackaday.com/2025/01/23/this-qr-code-leads-to-two-websites-but-how)
+- Entfernungsabhängig: Dual-Message-QR-Code, Sensors 2024, 24(10), 3055 (https://www.mdpi.com/1424-8220/24/10/3055)
+- Verwandte Mathematik: QArt Codes von Russ Cox (2012) steuern Module ebenfalls über lineare Algebra über GF(2) (https://research.swtch.com/qart)
+
+**Was QrrQ beiträgt:**
+
+- Fehlerfreie Daten in beiden Richtungen als Standard; Fehlerkorrektur „opfern“ ist nur eine Option (`MaxCorrectedCodewords`).
+- Alle sinnvollen Kombinationen der Fehlerkorrektur (L/L, M/L, M/M, Q/L, H/L) und die Versionen 1–40.
+- Formatbelegung pro Maskenpaar, abgestimmt auf gemessene Decoder-Regeln von OpenCV, ZBar und zxing-cpp; verschiedene Masken und Stufen je Richtung möglich.
+- Alle 64 Maskenpaare in einer einzigen Elimination sowie gleichwertige Segment-Kodierungen, um die Überlappung in der gemeinsamen Ecke aufzulösen.
+- Eine Open-Source-.NET-Bibliothek mit NuGet-Paket und CLI (MIT-Lizenz).
 
 ## Lizenz
 

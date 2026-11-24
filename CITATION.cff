@@ -3,8 +3,11 @@ message: "Wenn du QrrQ in einem Projekt, einer Arbeit oder einer Installation ve
 title: QrrQ
 abstract: >-
   QrrQ erzeugt QR-Codes, die normal gescannt einen Text und gespiegelt einen
-  zweiten, ebenfalls gültigen Text zeigen. Beide Lesarten sind nach
-  ISO/IEC 18004 gültig und mit voller Reed-Solomon-Fehlerkorrektur ausgestattet.
+  zweiten Text zeigen. Die Daten sind in beiden Leserichtungen fehlerfreie
+  Reed-Solomon-Codewörter, streng normkonform nach ISO/IEC 18004 sind die Codes
+  aber nicht (absichtlich abweichende Formatinformation, abweichende Füllbytes).
+  Die Grundidee doppelseitiger QR-Codes wurde zuerst von Alexey Tikhonov (2019)
+  beschrieben.
 type: software
 authors:
   - family-names: Müller
@@ -21,3 +24,19 @@ keywords:
   - Reed-Solomon
   - Fehlerkorrektur
   - Steganographie
+references:
+  - type: article
+    title: "On Double-Sided QR-Codes"
+    authors:
+      - family-names: Tikhonov
+        given-names: Alexey
+    year: 2019
+    url: https://arxiv.org/abs/1902.05722
+  - type: article
+    title: "Double-sided QR codes"
+    authors:
+      - family-names: van Rantwijk
+        given-names: Joris
+    year: 2025
+    date-published: 2025-06-30
+    url: https://jorisvr.nl/article/double-sided-qrcodes

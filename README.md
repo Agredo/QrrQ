@@ -7,7 +7,7 @@
 
 **English** · [Deutsch](README.de.md)
 
-**QrrQ** generates QR codes with two payloads: scanned normally they return text A, scanned in a mirror (or from the back of a transparency) they return text B. Both readings are valid QR codes according to ISO/IEC 18004. No special app is needed — any ordinary scanner will do.
+**QrrQ** generates QR codes with two payloads: scanned normally they return text A, scanned in a mirror (or from the back of a transparency) they return text B. In both reading directions the data are error-free Reed-Solomon codewords (with `MaxCorrectedCodewords = 0`), and common scanners read both directions normally. Strictly speaking, the codes are nevertheless not compliant with ISO/IEC 18004: the format information deviates on purpose (usually 1 bit per direction), and the pad bytes do not follow the standard `0xEC/0x11` pattern. No special app is needed — any ordinary scanner will do.
 
 - .NET 11 / C# 15, no runtime dependencies (own QR encoder, Reed-Solomon, PNG and SVG output)
 - API: two strings in, one code out as `byte[]` PNG, SVG or module grid
@@ -280,14 +280,35 @@ To publish, the repository needs the secret `NUGET_API_KEY` (nuget.org → API k
 
 ## Origin and attribution
 
-QrrQ — idea and implementation by **Christian Müller (Agredo)**, 2026.
+QrrQ — implementation by **Christian Müller (Agredo)**, 2026. The basic idea of double-sided QR codes was first described by Alexey Tikhonov (2019), see "Related work".
 
 The MIT license permits any use, modification and redistribution, including commercially and without consideration. It only requires that the copyright and license notice are retained when redistributing. So that the origin stays visible, two more files ship with the project:
 
 - [`NOTICE`](NOTICE) — provenance notice, bilingual
 - [`CITATION.cff`](CITATION.cff) — citation metadata (GitHub shows a "Cite this repository" button)
 
-If you redistribute QrrQ, fork it or embed it in a product, please carry the reference to the idea and its author along. The idea behind "one QR code, two readings" is deliberately documented in full in [Mathematical background](#mathematical-background) and is free to build upon — just please do not obscure where it came from.
+If you redistribute QrrQ, fork it or embed it in a product, please carry the reference to the project and its author along. The idea behind "one QR code, two readings" is deliberately documented in full in [Mathematical background](#mathematical-background) and is free to build upon — just please do not obscure where it came from.
+
+## Related work
+
+QrrQ is not the first approach to double-sided QR codes:
+
+- **Alexey Tikhonov: "On Double-Sided QR-Codes"** (arXiv:1902.05722, SIGBOVIK 2019) – the first documented description of the idea, with a brute-force and an analytic method. https://arxiv.org/abs/1902.05722
+- **Joris van Rantwijk: "Double-sided QR codes"** (2025-06-30) – a very similar approach: one joint GF(2) system over the syndrome bits of both messages, palindromic format information, and intentional errors at the overlaps that error correction repairs. Error correction level L only, versions 2–5. Online generator available. https://jorisvr.nl/article/double-sided-qrcodes · https://jorisvr.nl/article/make-mirror-qrcode
+
+Other ways to carry two messages in one code (not mirror-based):
+
+- Angle-dependent: "Dueling QR Codes" (arXiv:2503.13458) and the example on Hackaday (https://hackaday.com/2025/01/23/this-qr-code-leads-to-two-websites-but-how)
+- Distance-dependent: dual-message QR code, Sensors 2024, 24(10), 3055 (https://www.mdpi.com/1424-8220/24/10/3055)
+- Related math: Russ Cox's QArt Codes (2012) also control modules via linear algebra over GF(2) (https://research.swtch.com/qart)
+
+**What QrrQ adds:**
+
+- Error-free data in both directions by default; sacrificing error correction is opt-in (`MaxCorrectedCodewords`).
+- All workable error-correction combinations (L/L, M/L, M/M, Q/L, H/L) and versions 1–40.
+- Format information planned per mask pair, matched to measured decoder rules of OpenCV, ZBar and zxing-cpp; different masks and levels per direction are possible.
+- All 64 mask pairs in a single elimination, plus equivalent segment encodings to resolve the overlap in the shared corner.
+- An open-source .NET library with NuGet package and CLI (MIT license).
 
 ## License
 

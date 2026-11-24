@@ -4,7 +4,7 @@
     <PackageId>QrrQ</PackageId>
     <Title>QrrQ – QR-Codes mit Spiegel-Geheimnis</Title>
     <Version>1.0.0</Version>
-    <Description>Erzeugt QR-Codes mit zwei Inhalten: normal gescannt liefert der Code Text A, im Spiegel einen ebenso gültigen Text B. Beide Richtungen sind vollständige QR-Codes nach ISO/IEC 18004 mit voller Reed-Solomon-Fehlerkorrektur. Ohne Laufzeitabhängigkeiten: eigener Encoder und Decoder, Ausgabe als PNG, SVG, Modulraster oder Konsolenvorschau.</Description>
+    <Description>Erzeugt QR-Codes mit zwei Inhalten: normal gescannt liefert der Code Text A, im Spiegel einen zweiten Text B. Die Daten sind in beiden Leserichtungen fehlerfreie Reed-Solomon-Codewörter; streng normkonform nach ISO/IEC 18004 sind die Codes nicht, da Formatinformation und Füllbytes absichtlich abweichen. Ohne Laufzeitabhängigkeiten: eigener Encoder und Decoder, Ausgabe als PNG, SVG, Modulraster oder Konsolenvorschau.</Description>
     <PackageTags>qr;qrcode;mirror;spiegel;escape-room;puzzle;steganography;reed-solomon;error-correction;gf256;svg;png</PackageTags>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <IsAotCompatible>true</IsAotCompatible>
