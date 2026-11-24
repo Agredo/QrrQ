@@ -34,16 +34,21 @@ For machines without a .NET runtime there are fully precompiled single files. Th
 |---|---|---|---|
 | Windows x64 | `win-x64` | `qrrq-<version>-win-x64.zip` | 1.7 MB |
 | Windows ARM64 | `win-arm64` | `qrrq-<version>-win-arm64.zip` | 1.7 MB |
-| Linux x64 | `linux-x64` | `qrrq-<version>-linux-x64.tar.gz` | 1.8 MB |
-| macOS Apple Silicon | `osx-arm64` | `qrrq-<version>-osx-arm64.tar.gz` | 1.7 MB |
+| Linux x64 | `linux-x64` | `qrrq-<version>-linux-x64.zip` | 1.8 MB |
+| macOS Apple Silicon | `osx-arm64` | `qrrq-<version>-osx-arm64.zip` | 1.7 MB |
+
+All four are ZIP archives, so one method works everywhere: `unzip` on Linux and macOS, Explorer or `Expand-Archive` on Windows.
 
 The archives themselves are about 0.8 MB.
 
 Download the assets of the latest [GitHub release](https://github.com/Agredo/QrrQ/releases), unpack, run `qrrq` (or `qrrq.exe`), done:
 
 ```bash
-qrrq "Wrong trail" "Code: 4711" -o puzzle --svg
+unzip qrrq-<version>-linux-x64.zip -d qrrq
+./qrrq/qrrq "Wrong trail" "Code: 4711" -o puzzle --svg
 ```
+
+The ZIP keeps the Unix execute permission, so `unzip` produces a ready-to-run `qrrq`; if the bit is lost (e.g. after copying through a filesystem that drops it), `chmod +x qrrq` is enough.
 
 The archives contain `LICENSE` and `NOTICE`. They are produced by `.github/workflows/native.yml`: four runners, one `dotnet publish -p:PublishAot=true` each, followed by a self-test of the produced file before packaging. On a `v*` tag the workflow attaches the archives to the release automatically.
 

@@ -41,7 +41,7 @@ jobs:
 
       - name: Linux-Build-Abhängigkeiten
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y clang zlib1g-dev
+        run: sudo apt-get update && sudo apt-get install -y clang zlib1g-dev zip
 
       - name: Version bestimmen
         id: version
@@ -87,16 +87,16 @@ jobs:
           cp out/QrrQ.Cli dist/qrrq
           cp LICENSE NOTICE dist/
           chmod +x dist/qrrq
-          tar -czf "$name.tar.gz" -C dist qrrq LICENSE NOTICE
-          ls -l "$name.tar.gz"
+          cd dist
+          zip -r -X "../$name.zip" qrrq LICENSE NOTICE
+          cd ..
+          ls -l "$name.zip"
 
       - uses: actions/upload-artifact@v7
         with:
           name: qrrq-${{ matrix.rid }}
           if-no-files-found: ignore
-          path: |
-            qrrq-*.zip
-            qrrq-*.tar.gz
+          path: qrrq-*.zip
 
       - name: An das Release anhängen
         if: github.ref_type == 'tag'
@@ -112,3 +112,7 @@ jobs:
           done
           files=(qrrq-*)
           gh release upload "$tag" "${files[@]}" --clobber
+          # Alte .tar.gz-Assets früherer Releases entfernen (einheitlich ZIP)
+          gh release view "$tag" --json assets --jq '.assets[].name' | grep '\.tar\.gz$' | while read -r old; do
+            gh release delete-asset "$tag" "$old" --yes
+          done || true

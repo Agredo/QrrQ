@@ -34,16 +34,21 @@ Für Rechner ohne .NET-Laufzeit gibt es vollständig vorkompilierte Einzeldateie
 |---|---|---|---|
 | Windows x64 | `win-x64` | `qrrq-<version>-win-x64.zip` | 1,7 MB |
 | Windows ARM64 | `win-arm64` | `qrrq-<version>-win-arm64.zip` | 1,7 MB |
-| Linux x64 | `linux-x64` | `qrrq-<version>-linux-x64.tar.gz` | 1,8 MB |
-| macOS Apple Silicon | `osx-arm64` | `qrrq-<version>-osx-arm64.tar.gz` | 1,7 MB |
+| Linux x64 | `linux-x64` | `qrrq-<version>-linux-x64.zip` | 1,8 MB |
+| macOS Apple Silicon | `osx-arm64` | `qrrq-<version>-osx-arm64.zip` | 1,7 MB |
+
+Alle vier sind ZIP-Archive, es genügt also eine Methode für alle Systeme: `unzip` unter Linux und macOS, Explorer bzw. `Expand-Archive` unter Windows.
 
 Die Archive selbst sind rund 0,8 MB groß.
 
 Bezug: die Assets des jeweils neuesten [GitHub-Release](https://github.com/Agredo/QrrQ/releases). Entpacken, `qrrq` (bzw. `qrrq.exe`) aufrufen, fertig:
 
 ```bash
-qrrq "Falsche Fährte" "Code: 4711" -o raetsel --svg
+unzip qrrq-<version>-linux-x64.zip -d qrrq
+./qrrq/qrrq "Falsche Fährte" "Code: 4711" -o raetsel --svg
 ```
+
+Das ZIP enthält das Unix-Ausführungsrecht, `unzip` erzeugt also direkt ein startbares `qrrq`; geht das Bit verloren (etwa beim Kopieren über ein Dateisystem, das es nicht kennt), genügt `chmod +x qrrq`.
 
 Die Binaries enthalten `LICENSE` und `NOTICE`. Gebaut werden sie von `.github/workflows/native.yml`: vier Runner, je ein `dotnet publish -p:PublishAot=true`, danach ein Selbsttest der erzeugten Datei, bevor das Archiv entsteht. Bei einem Tag `v*` hängt der Workflow die Archive automatisch an das Release.
 
