@@ -1,0 +1,24 @@
+@if (Reading.Actual is { } actual)
+{
+    <td class="@Reading.CssClass">
+        <code>@actual.Text</code>
+        <small>V@(actual.Version) &middot; ECC @actual.Ecc &middot; mask @actual.Mask &middot; format distance @actual.FormatDistance &middot; repaired @actual.CorrectedCodewords</small>
+    </td>
+}
+else
+{
+    <td class="bad">
+        <code>not readable</code>
+        @if (!string.IsNullOrEmpty(Reading.Problem))
+        {
+            <small>@Reading.Problem</small>
+        }
+    </td>
+}
+
+@code {
+
+    /// <summary>Reading that this cell renders.</summary>
+    [Parameter, EditorRequired]
+    public Reading Reading { get; set; } = default!;
+}

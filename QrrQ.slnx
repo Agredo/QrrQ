@@ -3,6 +3,9 @@
     <Project Path="src/QrrQ/QrrQ.csproj" />
     <Project Path="src/QrrQ.Cli/QrrQ.Cli.csproj" />
   </Folder>
+  <Folder Name="/samples/">
+    <Project Path="samples/QrrQ.Playground/QrrQ.Playground.csproj" />
+  </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/QrrQ.Tests/QrrQ.Tests.csproj" />
   </Folder>

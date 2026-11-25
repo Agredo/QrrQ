@@ -1,0 +1,60 @@
+name: Playground
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'samples/QrrQ.Playground/**'
+      - 'src/QrrQ/**'
+      - 'Directory.Build.props'
+      - 'global.json'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 11.0.x
+
+      - name: Install wasm-tools workload
+        run: dotnet workload install wasm-tools
+
+      - name: Publish playground
+        run: dotnet publish samples/QrrQ.Playground/QrrQ.Playground.csproj -c Release -o build
+
+      - name: Prepare static site
+        run: |
+          sed -i 's|<base href="/" />|<base href="/QrrQ/" />|' build/wwwroot/index.html
+          grep -q 'base href="/QrrQ/"' build/wwwroot/index.html
+          cp build/wwwroot/index.html build/wwwroot/404.html
+          touch build/wwwroot/.nojekyll
+          find build/wwwroot \( -name '*.br' -o -name '*.gz' \) -delete
+          ls -la build/wwwroot
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: build/wwwroot
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

@@ -16,6 +16,10 @@
 - NuGet packages: [`QrrQ`](https://www.nuget.org/packages/QrrQ) (library) and [`QrrQ.Cli`](https://www.nuget.org/packages/QrrQ.Cli) (dotnet tool)
 - Native AOT: prebuilt, trimmed single files for win-x64, win-arm64, linux-x64 and osx-arm64 (no .NET installation required, 0.5–0.7 MB on Windows/Linux, 1.7 MB on macOS)
 
+## Try it in the browser
+
+The [QrrQ playground](https://agredo.github.io/QrrQ/) runs the library as WebAssembly: enter two texts, generate the code, download PNG/SVG, and let the built-in decoder read both directions back. It needs no installation, and nothing leaves the browser. The source lives in `samples/QrrQ.Playground`, deployed by `.github/workflows/pages.yml`.
+
 ## Installation
 
 ```bash
@@ -245,9 +249,11 @@ src/QrrQ/                 library (NuGet package "QrrQ")
   Rendering/              PNG (no dependencies), SVG, console
 src/QrrQ.Cli/             command line "qrrq" (dotnet tool)
 tests/QrrQ.Tests/         xUnit tests (37)
+samples/QrrQ.Playground/  Blazor WebAssembly playground (GitHub Pages)
 .github/workflows/ci.yml  build + tests on push and pull request
 .github/workflows/nuget.yml  pack and publish the NuGet packages
 .github/workflows/native.yml Native AOT binaries for four platforms
+.github/workflows/pages.yml  deploy the playground to GitHub Pages
 ```
 
 Language features used: union types, closed hierarchies, `with(...)` arguments in collection expressions, labelled `break` (C# 15), extension members and the `field` keyword (C# 14), plus primary constructors and collection expressions.

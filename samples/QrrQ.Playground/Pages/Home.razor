@@ -1,0 +1,329 @@
+@page "/"
+@inject IJSRuntime Js
+
+<PageTitle>QrrQ Playground</PageTitle>
+
+<header class="playground">
+    <h1>QrrQ Playground</h1>
+    <p>
+        One QR code, two texts: a scanner reads text A, a mirror reads text B.
+        Everything on this page happens in your browser - the code is built and read back by the
+        very same <code>QrrQ</code> assembly that ships on NuGet. Nothing is uploaded.
+    </p>
+</header>
+
+<section class="panel">
+    <h2>Build a mirror code</h2>
+    <div class="fields">
+        <label>
+            Text A - normal scan
+            <input @bind="normalText" spellcheck="false" />
+        </label>
+        <label>
+            Text B - in a mirror
+            <input @bind="mirroredText" spellcheck="false" />
+        </label>
+        <label>
+            Error correction A
+            <select @bind="normalEcc">
+                <option value="Auto">Auto (M, then L)</option>
+                <option value="L">L - about 7%</option>
+                <option value="M">M - about 15%</option>
+                <option value="Q">Q - about 25%</option>
+                <option value="H">H - about 30%</option>
+            </select>
+        </label>
+        <label>
+            Error correction B
+            <select @bind="mirroredEcc">
+                <option value="Auto">Auto (M, then L)</option>
+                <option value="L">L - about 7%</option>
+                <option value="M">M - about 15%</option>
+                <option value="Q">Q - about 25%</option>
+                <option value="H">H - about 30%</option>
+            </select>
+        </label>
+        <label>
+            Module size in pixels
+            <input type="number" min="1" max="40" @bind="moduleSize" />
+        </label>
+        <label>
+            Quiet zone in modules
+            <input type="number" min="0" max="16" @bind="quietZone" />
+        </label>
+        <label>
+            Repaired codewords allowed
+            <input type="number" min="0" max="40" @bind="maxCorrectedCodewords" />
+        </label>
+    </div>
+    <div class="actions">
+        <button class="primary" @onclick="GenerateAsync" disabled="@busy">@(busy ? "Computing..." : "Generate")</button>
+        <span class="hint">
+            Both directions need room, so H only pairs with L and Q with L or M.
+            Zero repaired codewords keeps both readings error free.
+        </span>
+    </div>
+    @if (!string.IsNullOrEmpty(error))
+    {
+        <p class="error">@error</p>
+    }
+</section>
+
+@if (result is { } current)
+{
+    <section class="panel">
+        <h2>The code</h2>
+        <p class="meta">
+            Version @current.Code.Version &middot; @current.Code.Size x @current.Code.Size modules &middot;
+            ECC @current.Code.NormalEcc.Letter/@current.Code.MirroredEcc.Letter &middot;
+            masks @current.Code.NormalMask/@current.Code.MirroredMask &middot;
+            format deviation @current.Code.NormalFormatBitErrors/@current.Code.MirroredFormatBitErrors bit &middot;
+            @(current.Code.IsErrorFree ? "both directions error free" : $"repaired codewords {current.Code.NormalCorrectedCodewords}/{current.Code.MirroredCorrectedCodewords}")
+        </p>
+        <div class="pair">
+            <figure>
+                <img src="@current.ArtworkPng" alt="QrrQ artwork ready for printing" />
+                <figcaption>Print artwork - reads "@current.Code.NormalText"</figcaption>
+                <div class="downloads">
+                    <a href="@current.ArtworkPng" download="qrrq.png">PNG</a>
+                    <a href="@current.ArtworkSvg" download="qrrq.svg">SVG</a>
+                </div>
+            </figure>
+            <figure>
+                <img src="@current.MirrorPng" alt="QrrQ artwork as seen in a mirror" />
+                <figcaption>Mirror view - reads "@current.Code.MirroredText"</figcaption>
+                <div class="downloads">
+                    <a href="@current.MirrorPng" download="qrrq.mirrored.png">PNG</a>
+                    <a href="@current.MirrorSvg" download="qrrq.mirrored.svg">SVG</a>
+                </div>
+            </figure>
+        </div>
+    </section>
+
+    <section class="panel">
+        <h2>Round trip in the browser</h2>
+        <p class="hint">
+            Both images are drawn onto a canvas, reduced to the module grid and handed to
+            <code>QrReader</code> - exactly what a scanner does after image processing.
+        </p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Image</th>
+                    <th>Read directly</th>
+                    <th>Read in a mirror</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Print artwork</td>
+                    <ReadingCell Reading="@current.Artwork.Direct" />
+                    <ReadingCell Reading="@current.Artwork.Mirrored" />
+                </tr>
+                <tr>
+                    <td>Mirror view</td>
+                    <ReadingCell Reading="@current.Mirror.Direct" />
+                    <ReadingCell Reading="@current.Mirror.Mirrored" />
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="panel">
+        <h2>Console preview</h2>
+        <p class="hint">Copy this block into a terminal to check the code without an image.</p>
+        <pre class="console">@current.ArtworkPreview</pre>
+    </section>
+}
+
+<section class="panel">
+    <h2>Check your own image</h2>
+    <p class="hint">
+        Drop a screenshot or a photo of a QrrQ code here. The image stays on your device.
+    </p>
+    <InputFile OnChange="CheckUploadAsync" accept="image/*" />
+    @if (upload is { } scan)
+    {
+        <table>
+            <thead>
+                <tr>
+                    <th>Image</th>
+                    <th>Read directly</th>
+                    <th>Read in a mirror</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        @scan.Width x @scan.Height px
+                        <small>@scan.Size modules, @scan.ModuleSize.ToString("0.##") px per module</small>
+                    </td>
+                    <ReadingCell Reading="@scan.Direct" />
+                    <ReadingCell Reading="@scan.Mirrored" />
+                </tr>
+            </tbody>
+        </table>
+    }
+</section>
+
+@code {
+
+    private string normalText = "Wrong trail";
+    private string mirroredText = "Code: 4711";
+    private string normalEcc = "Auto";
+    private string mirroredEcc = "Auto";
+    private int moduleSize = 10;
+    private int quietZone = 4;
+    private int maxCorrectedCodewords;
+    private bool busy;
+    private string? error;
+    private PlaygroundResult? result;
+    private ImageScan? upload;
+
+    protected override async Task OnInitializedAsync() => await GenerateAsync();
+
+    private async Task GenerateAsync()
+    {
+        if (string.IsNullOrEmpty(normalText) || string.IsNullOrEmpty(mirroredText))
+        {
+            error = "Both texts are required.";
+            result = null;
+            return;
+        }
+
+        busy = true;
+        error = null;
+
+        try
+        {
+            var options = new QrrQOptions
+            {
+                NormalEcc = ParseEcc(normalEcc),
+                MirroredEcc = ParseEcc(mirroredEcc),
+                MaxCorrectedCodewords = maxCorrectedCodewords,
+            };
+
+            switch (QrrQGenerator.TryCreate(normalText, mirroredText, options))
+            {
+                case QrrQCode code:
+                    result = await DescribeAsync(code);
+                    break;
+                case QrrQError failure:
+                    result = null;
+                    error = failure.Message;
+                    break;
+            }
+        }
+        catch (Exception exception)
+        {
+            result = null;
+            error = exception.Message;
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private async Task<PlaygroundResult> DescribeAsync(QrrQCode code)
+    {
+        var (artworkPng, mirrorPng) = code.ToPngPair(moduleSize, quietZone);
+        var artworkUrl = PngDataUrl(artworkPng);
+        var mirrorUrl = PngDataUrl(mirrorPng);
+
+        var artwork = await ScanAsync(artworkUrl, code.NormalText, code.MirroredText);
+        var mirror = await ScanAsync(mirrorUrl, code.MirroredText, code.NormalText);
+
+        return new PlaygroundResult(
+            code,
+            artworkUrl,
+            mirrorUrl,
+            SvgDataUrl(code.ToSvg(moduleSize, quietZone)),
+            SvgDataUrl(code.ToSvg(moduleSize, quietZone, mirrored: true)),
+            artwork,
+            mirror,
+            code.ToText(darkBackground: true, quietZone: 2),
+            code.ToText(mirrored: true, darkBackground: true, quietZone: 2));
+    }
+
+    private async Task CheckUploadAsync(InputFileChangeEventArgs args)
+    {
+        var file = args.File;
+        using var buffer = new MemoryStream();
+        using (var stream = file.OpenReadStream(maxAllowedSize: 32 * 1024 * 1024))
+        {
+            await stream.CopyToAsync(buffer);
+        }
+
+        var mime = string.IsNullOrWhiteSpace(file.ContentType) ? "image/png" : file.ContentType;
+        upload = await ScanAsync($"data:{mime};base64,{Convert.ToBase64String(buffer.ToArray())}");
+    }
+
+    private async Task<ImageScan> ScanAsync(string dataUrl, string? expectedDirect = null, string? expectedMirrored = null)
+    {
+        ImageDto image;
+        try
+        {
+            image = await Js.InvokeAsync<ImageDto>("qrrq.decode", dataUrl);
+        }
+        catch (JSException exception)
+        {
+            return new ImageScan(
+                false,
+                exception.Message,
+                0,
+                0,
+                0,
+                0,
+                new Reading(expectedDirect, null, exception.Message),
+                new Reading(expectedMirrored, null, exception.Message));
+        }
+
+        if (!image.Ok || image.Size == 0 || image.Matrix.Length != image.Size)
+        {
+            return new ImageScan(
+                false,
+                image.Error ?? "The image could not be analysed.",
+                image.Width,
+                image.Height,
+                image.ModuleSize,
+                image.Size,
+                new Reading(expectedDirect, null, image.Error),
+                new Reading(expectedMirrored, null, image.Error));
+        }
+
+        var modules = new bool[image.Size, image.Size];
+        for (var row = 0; row < image.Size; row++)
+        {
+            var line = image.Matrix[row];
+            for (var column = 0; column < image.Size; column++)
+            {
+                modules[row, column] = line[column] == '1';
+            }
+        }
+
+        var matrix = new QrMatrix(modules);
+        return new ImageScan(
+            true,
+            null,
+            image.Width,
+            image.Height,
+            image.ModuleSize,
+            image.Size,
+            Read(matrix, expectedDirect),
+            Read(matrix.FlipHorizontal(), expectedMirrored));
+    }
+
+    private static Reading Read(QrMatrix matrix, string? expected) =>
+        QrReader.TryRead(matrix, out var decoded, out var problem)
+            ? new Reading(expected, new ReadView(decoded.Text, decoded.Version, decoded.Ecc.Letter, decoded.Mask, decoded.FormatDistance, decoded.CorrectedCodewords))
+            : new Reading(expected, null, problem);
+
+    private static EccLevel? ParseEcc(string value) =>
+        value == "Auto" ? null : EccLevel.FromLetter(value[0]);
+
+    private static string PngDataUrl(byte[] png) => $"data:image/png;base64,{Convert.ToBase64String(png)}";
+
+    private static string SvgDataUrl(string svg) =>
+        $"data:image/svg+xml;base64,{Convert.ToBase64String(Encoding.UTF8.GetBytes(svg))}";
+}
