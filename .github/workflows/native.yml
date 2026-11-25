@@ -11,6 +11,7 @@ permissions:
 env:
   DOTNET_NOLOGO: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
+  UPX_VERSION: 5.3.0
 
 jobs:
   native:
@@ -43,6 +44,29 @@ jobs:
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y clang zlib1g-dev
 
+      - name: UPX bereitstellen (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          case "${{ matrix.rid }}" in
+            linux-x64) asset=amd64_linux ;;
+            osx-arm64) asset=arm64_macos ;;
+            *) echo "kein UPX-Archiv für ${{ matrix.rid }}"; exit 1 ;;
+          esac
+          curl -sSL "https://github.com/upx/upx/releases/download/v${UPX_VERSION}/upx-${UPX_VERSION}-${asset}.tar.bz2" | tar -xj
+          echo "$PWD/upx-${UPX_VERSION}-${asset}" >> "$GITHUB_PATH"
+          "./upx-${UPX_VERSION}-${asset}/upx" --version | head -1
+
+      - name: UPX bereitstellen (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $dir = "upx-$env:UPX_VERSION-win64"
+          Invoke-WebRequest -Uri "https://github.com/upx/upx/releases/download/v$env:UPX_VERSION/$dir.zip" -OutFile upx.zip
+          Expand-Archive upx.zip -DestinationPath .
+          $dir | Out-File -FilePath $env:GITHUB_PATH -Append
+          & ".\$dir\upx.exe" --version | Select-Object -First 1
+
       - name: Version bestimmen
         id: version
         shell: bash
@@ -62,6 +86,22 @@ jobs:
           -p:PublishAot=true
           -p:Version=${{ steps.version.outputs.value }}
           -o out
+
+      - name: Mit UPX komprimieren
+        shell: bash
+        run: |
+          file="out/QrrQ.Cli${{ matrix.exe }}"
+          before=$(wc -c < "$file")
+          upx --best --lzma "$file"
+          after=$(wc -c < "$file")
+          echo "UPX: $before -> $after Bytes"
+
+      - name: Ad-hoc-Signatur erneuern (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          codesign --force --sign - out/QrrQ.Cli
+          codesign --verify --verbose out/QrrQ.Cli
 
       - name: Selbsttest der Binärdatei
         shell: bash
