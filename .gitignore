@@ -5,6 +5,12 @@ artifacts/
 TestResults/
 *.nupkg
 *.snupkg
+out/
+out-*/
+dist/
+upx-*/
+upx.tar.xz
+upx.zip
 
 # IDE
 .vs/

@@ -44,18 +44,26 @@ jobs:
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y clang zlib1g-dev
 
-      - name: UPX bereitstellen (Unix)
-        if: runner.os != 'Windows'
+      - name: UPX bereitstellen (Linux)
+        if: runner.os == 'Linux'
         shell: bash
         run: |
           case "${{ matrix.rid }}" in
             linux-x64) asset=amd64_linux ;;
-            osx-arm64) asset=arm64_macos ;;
+            linux-arm64) asset=arm64_linux ;;
             *) echo "kein UPX-Archiv für ${{ matrix.rid }}"; exit 1 ;;
           esac
-          curl -sSL "https://github.com/upx/upx/releases/download/v${UPX_VERSION}/upx-${UPX_VERSION}-${asset}.tar.bz2" | tar -xj
+          curl -sSL "https://github.com/upx/upx/releases/download/v${UPX_VERSION}/upx-${UPX_VERSION}-${asset}.tar.xz" -o upx.tar.xz
+          tar -xJf upx.tar.xz
           echo "$PWD/upx-${UPX_VERSION}-${asset}" >> "$GITHUB_PATH"
-          "./upx-${UPX_VERSION}-${asset}/upx" --version | head -1
+          "./upx-${UPX_VERSION}-${asset}/upx" --version
+
+      - name: UPX bereitstellen (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          brew install upx
+          upx --version
 
       - name: UPX bereitstellen (Windows)
         if: runner.os == 'Windows'
@@ -65,7 +73,7 @@ jobs:
           Invoke-WebRequest -Uri "https://github.com/upx/upx/releases/download/v$env:UPX_VERSION/$dir.zip" -OutFile upx.zip
           Expand-Archive upx.zip -DestinationPath .
           $dir | Out-File -FilePath $env:GITHUB_PATH -Append
-          & ".\$dir\upx.exe" --version | Select-Object -First 1
+          & ".\$dir\upx.exe" --version
 
       - name: Version bestimmen
         id: version
@@ -91,6 +99,9 @@ jobs:
         shell: bash
         run: |
           file="out/QrrQ.Cli${{ matrix.exe }}"
+          if [[ "${{ runner.os }}" == "macOS" ]]; then
+            codesign --remove-signature "$file" || true
+          fi
           before=$(wc -c < "$file")
           upx --best --lzma "$file"
           after=$(wc -c < "$file")
