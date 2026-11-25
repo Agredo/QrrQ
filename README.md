@@ -14,7 +14,7 @@
 - Built-in decoder verifies every solution in both directions
 - Thoroughly tested (37 unit tests, self-test) and cross-checked against **OpenCV** and **zxing-cpp**
 - NuGet packages: [`QrrQ`](https://www.nuget.org/packages/QrrQ) (library) and [`QrrQ.Cli`](https://www.nuget.org/packages/QrrQ.Cli) (dotnet tool)
-- Native AOT: prebuilt, trimmed single files for win-x64, win-arm64, linux-x64 and osx-arm64 (no .NET installation required, ~1.7 MB)
+- Native AOT: prebuilt, trimmed single files for win-x64, win-arm64, linux-x64 and osx-arm64 (no .NET installation required, 0.5–0.7 MB on Windows/Linux, 1.7 MB on macOS)
 
 ## Installation
 
@@ -32,12 +32,14 @@ For machines without a .NET runtime there are fully precompiled single files. Th
 
 | Platform | RID | File | Size (unpacked) |
 |---|---|---|---|
-| Windows x64 | `win-x64` | `qrrq-<version>-win-x64.zip` | 1.7 MB |
-| Windows ARM64 | `win-arm64` | `qrrq-<version>-win-arm64.zip` | 1.7 MB |
-| Linux x64 | `linux-x64` | `qrrq-<version>-linux-x64.tar.gz` | 1.8 MB |
+| Windows x64 | `win-x64` | `qrrq-<version>-win-x64.zip` | 0.6 MB |
+| Windows ARM64 | `win-arm64` | `qrrq-<version>-win-arm64.zip` | 0.5 MB |
+| Linux x64 | `linux-x64` | `qrrq-<version>-linux-x64.tar.gz` | 0.7 MB |
 | macOS Apple Silicon | `osx-arm64` | `qrrq-<version>-osx-arm64.tar.gz` | 1.7 MB |
 
-The archives themselves are about 0.8 MB.
+The Windows and Linux executables are additionally packed with [UPX](https://upx.github.io/) (`--best --lzma`), which shrinks them by about two thirds. The macOS binary ships unpacked: macOS only runs code with a valid signature, and UPX-packed Mach-O arm64 files are no longer runnable even after re-signing, so the workflow keeps them uncompressed. The workflow always re-runs the self-test on the final file.
+
+The archives themselves are about 0.6 MB (Windows), 0.7 MB (Linux) and 0.8 MB (macOS).
 
 Download the assets of the latest [GitHub release](https://github.com/Agredo/QrrQ/releases), unpack, run `qrrq` (or `qrrq.exe`), done:
 

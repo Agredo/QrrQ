@@ -14,7 +14,7 @@
 - Eingebauter Decoder prüft jede Lösung in beiden Richtungen
 - Durchgängig getestet (37 Unit-Tests, Selbsttest) und mit **OpenCV** und **zxing-cpp** gegengeprüft
 - NuGet-Pakete: [`QrrQ`](https://www.nuget.org/packages/QrrQ) (Bibliothek) und [`QrrQ.Cli`](https://www.nuget.org/packages/QrrQ.Cli) (dotnet-Tool)
-- Native AOT: vorkompilierte, getrimmte Einzeldateien für win-x64, win-arm64, linux-x64 und osx-arm64 (ohne .NET-Installation, ~1,7 MB)
+- Native AOT: vorkompilierte, getrimmte Einzeldateien für win-x64, win-arm64, linux-x64 und osx-arm64 (ohne .NET-Installation, 0,5–0,7 MB unter Windows/Linux, 1,7 MB unter macOS)
 
 ## Installation
 
@@ -32,12 +32,14 @@ Für Rechner ohne .NET-Laufzeit gibt es vollständig vorkompilierte Einzeldateie
 
 | Plattform | RID | Datei | Größe (entpackt) |
 |---|---|---|---|
-| Windows x64 | `win-x64` | `qrrq-<version>-win-x64.zip` | 1,7 MB |
-| Windows ARM64 | `win-arm64` | `qrrq-<version>-win-arm64.zip` | 1,7 MB |
-| Linux x64 | `linux-x64` | `qrrq-<version>-linux-x64.tar.gz` | 1,8 MB |
+| Windows x64 | `win-x64` | `qrrq-<version>-win-x64.zip` | 0,6 MB |
+| Windows ARM64 | `win-arm64` | `qrrq-<version>-win-arm64.zip` | 0,5 MB |
+| Linux x64 | `linux-x64` | `qrrq-<version>-linux-x64.tar.gz` | 0,7 MB |
 | macOS Apple Silicon | `osx-arm64` | `qrrq-<version>-osx-arm64.tar.gz` | 1,7 MB |
 
-Die Archive selbst sind rund 0,8 MB groß.
+Die Windows- und Linux-Binärdateien werden zusätzlich mit [UPX](https://upx.github.io/) gepackt (`--best --lzma`), was sie um etwa zwei Drittel verkleinert. Die macOS-Binärdatei bleibt ungepackt: macOS führt nur Code mit gültiger Signatur aus, und mit UPX gepackte Mach-O-arm64-Dateien laufen auch nach erneutem Signieren nicht mehr, deshalb lässt der Workflow sie unkomprimiert. Der Selbsttest läuft immer auf der endgültigen Datei.
+
+Die Archive selbst sind rund 0,6 MB (Windows), 0,7 MB (Linux) und 0,8 MB (macOS) groß.
 
 Bezug: die Assets des jeweils neuesten [GitHub-Release](https://github.com/Agredo/QrrQ/releases). Entpacken, `qrrq` (bzw. `qrrq.exe`) aufrufen, fertig:
 
