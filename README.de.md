@@ -18,7 +18,7 @@
 
 ## Im Browser ausprobieren
 
-Der [QrrQ-Playground](https://agredo.github.io/QrrQ/) führt die Bibliothek als WebAssembly aus: zwei Texte eingeben, Code erzeugen, PNG/SVG herunterladen und beide Richtungen mit dem eingebauten Decoder zurücklesen. Ohne Installation, und nichts verlässt den Browser. Der Quellcode liegt in `samples/QrrQ.Playground`, ausgeliefert von `.github/workflows/pages.yml`.
+Der [QrrQ-Playground](https://agredo.github.io/QrrQ/) führt die Bibliothek als WebAssembly aus: zwei Texte eingeben, Code erzeugen, PNG/SVG herunterladen und beide Richtungen mit dem eingebauten Decoder zurücklesen. Ohne Installation, und nichts verlässt den Browser. Das Beispiel ist ein kleiner Scherz: normal gescannt kommt der [Rickroll](https://youtu.be/dQw4w9WgXcQ), im Spiegel die Repository-URL. Der Quellcode liegt in `samples/QrrQ.Playground`, ausgeliefert von `.github/workflows/pages.yml`.
 
 ## Installation
 

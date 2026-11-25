@@ -18,7 +18,7 @@
 
 ## Try it in the browser
 
-The [QrrQ playground](https://agredo.github.io/QrrQ/) runs the library as WebAssembly: enter two texts, generate the code, download PNG/SVG, and let the built-in decoder read both directions back. It needs no installation, and nothing leaves the browser. The source lives in `samples/QrrQ.Playground`, deployed by `.github/workflows/pages.yml`.
+The [QrrQ playground](https://agredo.github.io/QrrQ/) runs the library as WebAssembly: enter two texts, generate the code, download PNG/SVG, and let the built-in decoder read both directions back. It needs no installation, and nothing leaves the browser. The default sample is a small joke: a normal scan returns the [rickroll](https://youtu.be/dQw4w9WgXcQ), a mirror scan the repository URL. The source lives in `samples/QrrQ.Playground`, deployed by `.github/workflows/pages.yml`.
 
 ## Installation
 
