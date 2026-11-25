@@ -5,7 +5,7 @@ public class QrMatrixTests
     [Fact]
     public void Transformations_are_their_own_inverse_or_periodic()
     {
-        var code = QrrQGenerator.Create("Falsche Fährte", "Code: 4711");
+        var code = QrrQGenerator.Create("False trail", "Code: 4711");
         var matrix = code.Matrix;
 
         Assert.Equal(matrix, matrix.Transpose().Transpose());
@@ -18,7 +18,7 @@ public class QrMatrixTests
     [Fact]
     public void FlipHorizontal_mirrors_columns()
     {
-        var code = QrrQGenerator.Create("Falsche Fährte", "Code: 4711");
+        var code = QrrQGenerator.Create("False trail", "Code: 4711");
         var mirrored = code.Matrix.FlipHorizontal();
 
         for (var row = 0; row < code.Size; row++)
@@ -33,7 +33,7 @@ public class QrMatrixTests
     [Fact]
     public void ToArray_matches_indexer()
     {
-        var code = QrrQGenerator.Create("Falsche Fährte", "Code: 4711");
+        var code = QrrQGenerator.Create("False trail", "Code: 4711");
         var array = code.Matrix.ToArray();
 
         Assert.Equal(code.Size, array.GetLength(0));
@@ -51,7 +51,7 @@ public class QrMatrixTests
     [Fact]
     public void Equality_compares_content()
     {
-        var code = QrrQGenerator.Create("Falsche Fährte", "Code: 4711");
+        var code = QrrQGenerator.Create("False trail", "Code: 4711");
         var copy = new QrMatrix(code.Matrix.ToArray());
 
         Assert.Equal(code.Matrix, copy);

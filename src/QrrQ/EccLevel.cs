@@ -1,27 +1,27 @@
 namespace QrrQ;
 
-/// <summary>Fehlerkorrekturstufe nach ISO/IEC 18004.</summary>
+/// <summary>Error correction level according to ISO/IEC 18004.</summary>
 public enum EccLevel
 {
-    /// <summary>L – ca. 7 % der Codewörter rekonstruierbar.</summary>
+    /// <summary>L - about 7% of the codewords can be reconstructed.</summary>
     Low,
 
-    /// <summary>M – ca. 15 % der Codewörter rekonstruierbar.</summary>
+    /// <summary>M - about 15% of the codewords can be reconstructed.</summary>
     Medium,
 
-    /// <summary>Q – ca. 25 % der Codewörter rekonstruierbar.</summary>
+    /// <summary>Q - about 25% of the codewords can be reconstructed.</summary>
     Quartile,
 
-    /// <summary>H – ca. 30 % der Codewörter rekonstruierbar.</summary>
+    /// <summary>H - about 30% of the codewords can be reconstructed.</summary>
     High,
 }
 
-/// <summary>Erweiterungsmember (C# 14) für <see cref="EccLevel"/>.</summary>
+/// <summary>Extension members (C# 14) for <see cref="EccLevel"/>.</summary>
 public static class EccLevelExtensions
 {
     extension(EccLevel level)
     {
-        /// <summary>Kennbuchstabe der Stufe: L, M, Q oder H.</summary>
+        /// <summary>Single-letter code of the level: L, M, Q or H.</summary>
         public char Letter => level switch
         {
             EccLevel.Low => 'L',
@@ -31,7 +31,7 @@ public static class EccLevelExtensions
             _ => throw new ArgumentOutOfRangeException(nameof(level)),
         };
 
-        /// <summary>Die 2-Bit-Kennung im Formatfeld (L = 01, M = 00, Q = 11, H = 10).</summary>
+        /// <summary>The 2-bit identifier in the format field (L = 01, M = 00, Q = 11, H = 10).</summary>
         internal int FormatBits => level switch
         {
             EccLevel.Low => 0b01,
@@ -44,14 +44,14 @@ public static class EccLevelExtensions
 
     extension(EccLevel)
     {
-        /// <summary>Liest eine Stufe aus ihrem Kennbuchstaben (L, M, Q, H).</summary>
+        /// <summary>Reads a level from its single-letter code (L, M, Q, H).</summary>
         public static EccLevel FromLetter(char letter) => char.ToUpperInvariant(letter) switch
         {
             'L' => EccLevel.Low,
             'M' => EccLevel.Medium,
             'Q' => EccLevel.Quartile,
             'H' => EccLevel.High,
-            _ => throw new FormatException($"Unbekannte Fehlerkorrekturstufe '{letter}'. Erlaubt: L, M, Q, H."),
+            _ => throw new FormatException($"Unknown error correction level '{letter}'. Allowed: L, M, Q, H."),
         };
 
         internal static EccLevel FromFormatBits(int bits) => bits switch

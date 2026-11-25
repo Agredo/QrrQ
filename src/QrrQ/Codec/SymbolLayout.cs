@@ -1,13 +1,13 @@
 namespace QrrQ.Codec;
 
 /// <summary>
-/// Geometrie einer QR-Version: Funktionsmuster, Zickzack-Reihenfolge der Datenmodule
-/// und die Permutation, die die Transposition auf den Datenmodulen bewirkt.
+/// Geometry of a QR version: function patterns, zigzag order of the data modules
+/// and the permutation that the transposition causes on the data modules.
 /// </summary>
 /// <remarks>
-/// Alle Funktionsmuster (Finder, Timing, Ausrichtung, Format- und Versionsbereich, Dark Module)
-/// bilden bei Transposition auf sich selbst ab. Die Datenmodule werden daher nur permutiert –
-/// genau das macht den Spiegel-Trick zu einem linearen Problem über GF(2).
+/// All function patterns (finder, timing, alignment, format and version area, dark module)
+/// map onto themselves under transposition. The data modules are therefore only permuted -
+/// which is exactly what turns the mirror trick into a linear problem over GF(2).
 /// </remarks>
 internal sealed class SymbolLayout
 {
@@ -46,7 +46,7 @@ internal sealed class SymbolLayout
             }
         }
 
-        // Formatbereich reservieren (die Bits werden später pro Lösung gezeichnet).
+        // Reserve the format area (the bits are drawn later per solution).
         for (var bit = 0; bit < 15; bit++)
         {
             var (row1, column1) = FormatInfo.Copy1Cell(bit);
@@ -94,7 +94,7 @@ internal sealed class SymbolLayout
         DataPositions = [.. positions];
         if (DataPositions.Length != QrTables.RawDataModules(version))
         {
-            throw new InvalidOperationException($"Version {version}: falsche Anzahl Datenmodule.");
+            throw new InvalidOperationException($"Version {version}: wrong number of data modules.");
         }
 
         VariableAt = new int[size * size];
@@ -111,7 +111,7 @@ internal sealed class SymbolLayout
             var transposed = VariableAt[cell % size * size + cell / size];
             TransposedVariable[k] = transposed >= 0
                 ? transposed
-                : throw new InvalidOperationException("Datenbereich ist nicht transpositionssymmetrisch.");
+                : throw new InvalidOperationException("Data area is not symmetric under transposition.");
         }
     }
 
@@ -119,19 +119,19 @@ internal sealed class SymbolLayout
 
     public int Size { get; }
 
-    /// <summary>Zelle (Zeile * Size + Spalte) gehört zu einem Funktionsmuster.</summary>
+    /// <summary>Cell (row * Size + column) belongs to a function pattern.</summary>
     public bool[] IsFunction { get; }
 
-    /// <summary>Feste Werte der Funktionsmuster; Formatbits sind hier noch hell.</summary>
+    /// <summary>Fixed values of the function patterns; format bits are still light here.</summary>
     public bool[] FunctionValues { get; }
 
-    /// <summary>Datenmodule in Zickzack-Reihenfolge: Bit k des Stroms liegt in Zelle DataPositions[k].</summary>
+    /// <summary>Data modules in zigzag order: stream bit k lives in cell DataPositions[k].</summary>
     public int[] DataPositions { get; }
 
-    /// <summary>Zelle → Index im Datenstrom, -1 für Funktionsmodule.</summary>
+    /// <summary>Cell -> index in the data stream, -1 for function modules.</summary>
     public int[] VariableAt { get; }
 
-    /// <summary>σ: Strombit k des transponierten Codes liegt im Original auf Datenmodul σ(k).</summary>
+    /// <summary>σ: stream bit k of the transposed code lives on data module σ(k) in the original.</summary>
     public int[] TransposedVariable { get; }
 
     public static SymbolLayout Get(int version)

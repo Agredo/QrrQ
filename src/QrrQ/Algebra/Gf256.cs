@@ -1,6 +1,6 @@
 namespace QrrQ.Algebra;
 
-/// <summary>Arithmetik in GF(2⁸) mit dem QR-Polynom x⁸ + x⁴ + x³ + x² + 1 (0x11D), Erzeuger α = 2.</summary>
+/// <summary>Arithmetic in GF(2⁸) with the QR polynomial x⁸ + x⁴ + x³ + x² + 1 (0x11D), generator α = 2.</summary>
 internal static class Gf256
 {
     private static readonly byte[] ExpTable = new byte[510];
@@ -21,7 +21,7 @@ internal static class Gf256
         }
     }
 
-    /// <summary>αᵉ für beliebige (auch negative) Exponenten.</summary>
+    /// <summary>αᵉ for any (also negative) exponent.</summary>
     public static byte Exp(int exponent) => ExpTable[(exponent % 255 + 255) % 255];
 
     public static byte Multiply(byte a, byte b) =>

@@ -3,44 +3,43 @@ using System.Numerics;
 namespace QrrQ.Codec;
 
 /// <summary>
-/// Belegung der beiden Formatfelder: <see cref="Copy1"/>/<see cref="Copy2"/> sind die 15 Bits, die in die
-/// Zellen von Kopie 1 bzw. Kopie 2 gezeichnet werden. Die gespiegelte Richtung sieht dieselben Zellen
-/// bitweise umgekehrt.
+/// Content of the two format fields: <see cref="Copy1"/>/<see cref="Copy2"/> are the 15 bits drawn into the
+/// cells of copy 1 and copy 2. The mirrored direction sees the same cells bit-reversed.
 /// </summary>
-/// <param name="Copy1">Bits für die Zellen der Formatkopie 1.</param>
-/// <param name="Copy2">Bits für die Zellen der Formatkopie 2 (Bit 7 ist das transponierte Dark Module, also immer 1).</param>
-/// <param name="DistanceNormal">Abstand der besten Kopie zum Formatwort der normalen Richtung (0 = exakt).</param>
-/// <param name="DistanceMirrored">Dasselbe für die gespiegelte Richtung.</param>
+/// <param name="Copy1">Bits for the cells of format copy 1.</param>
+/// <param name="Copy2">Bits for the cells of format copy 2 (bit 7 is the transposed dark module, so always 1).</param>
+/// <param name="DistanceNormal">Distance of the best copy to the format word of the normal direction (0 = exact).</param>
+/// <param name="DistanceMirrored">The same for the mirrored direction.</param>
 /// <param name="Tolerance">
-/// Wie viele zusätzliche Lesefehler im Formatbereich jede Kopie verträgt, bevor ein Decoder sie zu einem
-/// falschen Formatwort korrigieren könnte oder die richtige Kopie unkorrigierbar wird.
+/// How many additional read errors in the format area each copy tolerates before a decoder could correct it into a
+/// wrong format word or the correct copy becomes uncorrectable.
 /// </param>
 internal readonly record struct FormatPlan(int Copy1, int Copy2, int DistanceNormal, int DistanceMirrored, int Tolerance)
 {
     /// <summary>
-    /// Kleiner ist besser: zuerst Nähe zum Formatwort (zxing-cpp prüft zusätzlich ungemaskierte und gespiegelte
-    /// Lesarten – ein Abstand von 2 kann dort schon unterboten werden), dann Robustheit gegen Abtastfehler.
+    /// Smaller is better: first closeness to the format word (zxing-cpp additionally checks unmasked and mirrored
+    /// readings - a distance of 2 can already be undercut there), then robustness against sampling errors.
     /// </summary>
     public int Cost => (DistanceNormal + DistanceMirrored) * 16 + (3 - Tolerance);
 }
 
 /// <summary>
-/// Sucht für jedes Maskenpaar eine Formatbelegung, die von den verbreiteten Decoder-Strategien
-/// in beiden Richtungen richtig gelesen wird.
+/// Looks for a format assignment per mask pair that the common decoder strategies read correctly
+/// in both directions.
 /// </summary>
 /// <remarks>
-/// Kein gültiges Formatwort ist bitweise umgekehrt wieder gültig. Deshalb trägt jede Richtung ihr Formatwort
-/// in einer Kopie, und die jeweils „fremde“ Kopie muss so liegen, dass sie keinen Decoder in die Irre führt.
-/// Die Regeln wurden an echten Decodern gemessen:
+/// No valid format word is valid again when bit-reversed. Each direction therefore carries its format word in one
+/// copy, and the "foreign" copy must be placed so that it does not mislead any decoder.
+/// The rules were measured against real decoders:
 /// <list type="bullet">
-/// <item>OpenCV scheitert, sobald irgendeine Kopie zu einem falschen Formatwort korrigierbar ist.</item>
-/// <item>ZBar kombiniert die Hälften beider Kopien per Mehrheitsentscheid; falsche Kopien kippen das Ergebnis.</item>
-/// <item>zxing-cpp bewertet zusätzlich die gespiegelte Lesart und nimmt den kleinsten Abstand – beide
-///       Richtungen brauchen daher denselben Abstand, damit die normale Lesart den Gleichstand gewinnt.</item>
+/// <item>OpenCV fails as soon as any copy is correctable into a wrong format word.</item>
+/// <item>ZBar combines the halves of both copies by majority vote; wrong copies flip the result.</item>
+/// <item>zxing-cpp additionally rates the mirrored reading and takes the smallest distance - both directions
+///       therefore need the same distance so that the normal reading wins the tie.</item>
 /// </list>
-/// Fremde Kopien werden darum „unkorrigierbar“ gemacht (≥ 4 Bit von jedem Formatwort). Dafür werden einzelne
-/// Bits verschoben; meist liest dann jede Richtung ihr Formatwort mit 1 Bit Abweichung – das korrigiert jeder
-/// Decoder, denn die Formatinformation verträgt bis zu 3 Bitfehler.
+/// Foreign copies are thus made "uncorrectable" (>= 4 bits away from every format word). To achieve that,
+/// individual bits are shifted; usually each direction then reads its format word with 1 bit of deviation -
+/// which every decoder corrects, because the format information tolerates up to 3 bit errors.
 /// </remarks>
 internal static class FormatPlanner
 {
@@ -112,14 +111,14 @@ internal static class FormatPlanner
 
     private static FormatPlan? Plan(int formatA, int formatB)
     {
-        // Kandidaten: alles bis 2 Bit um das eigene bzw. das (umgekehrte) fremde Formatwort. Jede Kopie muss in
-        // BEIDEN Lesarten entweder zum richtigen Formatwort korrigierbar oder von allen ≥ 4 Bit entfernt sein.
+        // Candidates: everything within 2 bits of the own or the (reversed) foreign format word. Each copy must be
+        // either correctable into the right format word in BOTH readings or be >= 4 bits away from all of them.
         int[] copies1 =
         [
             .. Ball(formatA, 2).Concat(Ball(Reverse(formatB), 2)).Distinct()
                 .Where(c => Acceptable(c, formatA) && Acceptable(Reverse(c), formatB)),
         ];
-        int[] copies2 = [.. copies1.Where(c => (c >> 7 & 1) != 0)]; // Bit 7 = Dark Module der gespiegelten Lesart
+        int[] copies2 = [.. copies1.Where(c => (c >> 7 & 1) != 0)]; // bit 7 = dark module of the mirrored reading
 
         FormatPlan? best = null;
         foreach (var copy1 in copies1)
@@ -129,8 +128,8 @@ internal static class FormatPlanner
                 var distanceA = BestDistance(copy1, copy2, formatA);
                 var distanceB = BestDistance(Reverse(copy1), Reverse(copy2), formatB);
 
-                // Gleicher Abstand in beiden Richtungen: Decoder, die auch die gespiegelte Lesart
-                // bewerten (zxing-cpp), sollen nie die „falsche“ Richtung bevorzugen.
+                // Same distance in both directions: decoders that also rate the mirrored reading
+                // (zxing-cpp) must never prefer the "wrong" direction.
                 if (distanceA > 3 || distanceA != distanceB ||
                     !WinsZbarVote(copy1, copy2, formatA) ||
                     !WinsZbarVote(Reverse(copy1), Reverse(copy2), formatB))
@@ -153,10 +152,10 @@ internal static class FormatPlanner
     }
 
     /// <summary>
-    /// Eine Kopie ist zulässig, wenn sie zum Formatwort <paramref name="target"/> korrigierbar ist (≤ 3 Bit) oder
-    /// von allen Formatwörtern ≥ 4 Bit entfernt („unkorrigierbar“, wird verworfen). Eine Kopie, die sich zu einem
-    /// <i>falschen</i> Formatwort korrigieren ließe, ist tabu – OpenCV und ZBar scheitern daran nachweislich,
-    /// selbst wenn die andere Kopie exakt ist.
+    /// A copy is acceptable if it is correctable into the format word <paramref name="target"/> (&lt;= 3 bits) or
+    /// is at least 4 bits away from every format word ("uncorrectable", gets discarded). A copy that could be
+    /// corrected into a <i>wrong</i> format word is off limits - OpenCV and ZBar provably fail on that even when
+    /// the other copy is exact.
     /// </summary>
     private static bool Acceptable(int copy, int target) =>
         NearestDistance[copy] > 3 || Codes[NearestCode[copy]] == target;
@@ -175,7 +174,7 @@ internal static class FormatPlanner
         return best;
     }
 
-    /// <summary>Abstand zum nächsten Formatwort, das <i>nicht</i> das Ziel ist.</summary>
+    /// <summary>Distance to the nearest format word that is <i>not</i> the target.</summary>
     private static int WrongDistance(int copy, int target)
     {
         var best = int.MaxValue;
@@ -191,9 +190,9 @@ internal static class FormatPlanner
     }
 
     /// <summary>
-    /// Nachbildung von ZBars <c>qr_finder_fmt_info_decode</c>: Bits 0–7 und 8–14 werden getrennt aus beiden
-    /// Kopien gelesen und kombiniert (bis zu vier Wörter). Jedes Wort stimmt ab – auch unkorrigierbare, dann mit
-    /// „4 Fehlern“ für seine rohen Datenbits. Mehr Stimmen schlagen weniger Fehler.
+    /// Replica of ZBar's <c>qr_finder_fmt_info_decode</c>: bits 0-7 and 8-14 are read from both
+    /// copies separately and combined (up to four words). Every word votes - uncorrectable ones too, then with
+    /// "4 errors" for their raw data bits. More votes beat fewer errors.
     /// </summary>
     private static bool WinsZbarVote(int copy1, int copy2, int target)
     {

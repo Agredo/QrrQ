@@ -7,10 +7,10 @@ public class ApiTests
     [Fact]
     public void TryCreate_returns_union_with_code()
     {
-        var result = QrrQGenerator.TryCreate("Falsche Fährte", "Code: 4711");
+        var result = QrrQGenerator.TryCreate("False trail", "Code: 4711");
 
         var code = Assert.IsType<QrrQCode>(result.Value);
-        Assert.Equal("Falsche Fährte", code.NormalText);
+        Assert.Equal("False trail", code.NormalText);
         Assert.Equal("Code: 4711", code.MirroredText);
     }
 
@@ -38,7 +38,7 @@ public class ApiTests
         var error = Assert.IsType<PayloadTooLong>(result.Value);
         Assert.True(error.NormalBits > 0);
         Assert.Equal(40, error.MaxVersion);
-        Assert.Contains("zu lang", error.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("too long", error.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -57,7 +57,7 @@ public class ApiTests
     public void Explicit_ecc_levels_are_used()
     {
         var options = new QrrQOptions { NormalEcc = EccLevel.Low, MirroredEcc = EccLevel.Low };
-        var code = QrrQGenerator.Create("Falsche Fährte", "Code: 4711", options);
+        var code = QrrQGenerator.Create("False trail", "Code: 4711", options);
 
         Assert.Equal(EccLevel.Low, code.NormalEcc);
         Assert.Equal(EccLevel.Low, code.MirroredEcc);
@@ -68,7 +68,7 @@ public class ApiTests
     public void Version_bounds_are_respected()
     {
         var options = new QrrQOptions { MinVersion = 5, MaxVersion = 6 };
-        var code = QrrQGenerator.Create("Falsche Fährte", "Code: 4711", options);
+        var code = QrrQGenerator.Create("False trail", "Code: 4711", options);
 
         Assert.InRange(code.Version, 5, 6);
         Assert.Equal((code.Version * 4) + 17, code.Size);
@@ -118,7 +118,7 @@ public class ApiTests
     [Fact]
     public void Verify_reports_consistent_metadata()
     {
-        var code = QrrQGenerator.Create("Falsche Fährte", "Code: 4711");
+        var code = QrrQGenerator.Create("False trail", "Code: 4711");
         var (normal, mirrored) = code.Verify();
 
         Assert.Equal(code.Version, normal.Version);
@@ -132,9 +132,9 @@ public class ApiTests
     [Fact]
     public void Code_properties_describe_the_payload()
     {
-        var code = QrrQGenerator.Create("Falsche Fährte", "Code: 4711");
+        var code = QrrQGenerator.Create("False trail", "Code: 4711");
 
-        Assert.Equal("Falsche Fährte", code.NormalText);
+        Assert.Equal("False trail", code.NormalText);
         Assert.Equal("Code: 4711", code.MirroredText);
         Assert.InRange(code.Version, 1, 40);
         Assert.Equal(code.Matrix.Size, code.Size);

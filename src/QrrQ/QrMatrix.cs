@@ -1,21 +1,21 @@
 namespace QrrQ;
 
 /// <summary>
-/// Unveränderliches, quadratisches Modulraster eines QR-Codes.
-/// <c>true</c> steht für ein dunkles Modul, Indizes sind [Zeile, Spalte].
+/// Immutable, square module grid of a QR code.
+/// <c>true</c> stands for a dark module, indices are [row, column].
 /// </summary>
 public sealed class QrMatrix : IEquatable<QrMatrix>
 {
     private readonly bool[] modules;
 
-    /// <summary>Erzeugt ein Raster aus einem zweidimensionalen Array [Zeile, Spalte].</summary>
+    /// <summary>Creates a grid from a two-dimensional array [row, column].</summary>
     public QrMatrix(bool[,] modules)
     {
         ArgumentNullException.ThrowIfNull(modules);
         var size = modules.GetLength(0);
         if (size != modules.GetLength(1))
         {
-            throw new ArgumentException("Das Raster muss quadratisch sein.", nameof(modules));
+            throw new ArgumentException("The grid must be square.", nameof(modules));
         }
 
         Size = size;
@@ -29,39 +29,39 @@ public sealed class QrMatrix : IEquatable<QrMatrix>
         }
     }
 
-    /// <summary>Übernimmt ein zeilenweise abgelegtes Raster ohne Kopie.</summary>
+    /// <summary>Takes over a row-major grid without copying.</summary>
     internal QrMatrix(int size, bool[] modules)
     {
         if (modules.Length != size * size)
         {
-            throw new ArgumentException("Raster passt nicht zur Größe.", nameof(modules));
+            throw new ArgumentException("Grid does not match the size.", nameof(modules));
         }
 
         Size = size;
         this.modules = modules;
     }
 
-    /// <summary>Kantenlänge in Modulen (21 für Version 1 … 177 für Version 40).</summary>
+    /// <summary>Edge length in modules (21 for version 1 ... 177 for version 40).</summary>
     public int Size { get; }
 
-    /// <summary>Liefert, ob das Modul an [Zeile, Spalte] dunkel ist.</summary>
+    /// <summary>Returns whether the module at [row, column] is dark.</summary>
     public bool this[int row, int column] => modules[row * Size + column];
 
     internal ReadOnlySpan<bool> Modules => modules;
 
-    /// <summary>Spiegelt an der Hauptdiagonalen (Zeilen werden Spalten).</summary>
+    /// <summary>Mirrors along the main diagonal (rows become columns).</summary>
     public QrMatrix Transpose() => Map(static (size, row, column) => column * size + row);
 
-    /// <summary>Spiegelt links/rechts – so, wie ein Spiegel den Code zeigt.</summary>
+    /// <summary>Mirrors left/right - the way a mirror shows the code.</summary>
     public QrMatrix FlipHorizontal() => Map(static (size, row, column) => row * size + (size - 1 - column));
 
-    /// <summary>Spiegelt oben/unten.</summary>
+    /// <summary>Mirrors top/bottom.</summary>
     public QrMatrix FlipVertical() => Map(static (size, row, column) => (size - 1 - row) * size + column);
 
-    /// <summary>Dreht um 90° im Uhrzeigersinn.</summary>
+    /// <summary>Rotates 90 degrees clockwise.</summary>
     public QrMatrix RotateClockwise() => Map(static (size, row, column) => (size - 1 - column) * size + row);
 
-    /// <summary>Kopiert das Raster in ein zweidimensionales Array [Zeile, Spalte].</summary>
+    /// <summary>Copies the grid into a two-dimensional array [row, column].</summary>
     public bool[,] ToArray()
     {
         var result = new bool[Size, Size];
@@ -77,8 +77,8 @@ public sealed class QrMatrix : IEquatable<QrMatrix>
     }
 
     /// <summary>
-    /// Packt das Raster zeilenweise in Bytes (MSB zuerst, 1 = dunkel).
-    /// Jede Zeile beginnt an einer Bytegrenze und belegt <c>(Size + 7) / 8</c> Bytes.
+    /// Packs the grid row by row into bytes (MSB first, 1 = dark).
+    /// Every row starts at a byte boundary and occupies <c>(Size + 7) / 8</c> bytes.
     /// </summary>
     public byte[] ToPackedRows()
     {

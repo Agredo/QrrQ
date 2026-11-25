@@ -2,7 +2,7 @@ using System.Text;
 
 namespace QrrQ.Rendering;
 
-/// <summary>SVG-Ausgabe: ein einziger Pfad, horizontale Läufe zusammengefasst.</summary>
+/// <summary>SVG output: a single path with horizontal runs merged.</summary>
 internal static class SvgRenderer
 {
     public static string Render(QrMatrix matrix, int moduleSize, int quietZone, string darkColor, string lightColor)

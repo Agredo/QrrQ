@@ -4,7 +4,7 @@ using System.Text.Unicode;
 
 namespace QrrQ.Reading;
 
-/// <summary>Zerlegt den Datenbitstrom in Segmente (Numerisch, Alphanumerisch, Byte, ECI).</summary>
+/// <summary>Splits the data bit stream into segments (numeric, alphanumeric, byte, ECI).</summary>
 internal static class SegmentParser
 {
     private const string AlphanumericCharset = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:";
@@ -25,7 +25,7 @@ internal static class SegmentParser
             switch (mode)
             {
                 case 0b0000:
-                    break parse; // Terminator – alles danach sind Füllbits.
+                    break parse; // Terminator - everything after it are pad bits.
 
                 case 0b0001:
                     {
@@ -33,14 +33,14 @@ internal static class SegmentParser
                         for (; count >= 3; count -= 3)
                         {
                             var value = reader.Read(10);
-                            if (value > 999) return Fail("Ungültige Zifferngruppe.", out error);
+                            if (value > 999) return Fail("Invalid digit group.", out error);
                             builder.Append(value.ToString("D3"));
                         }
 
                         if (count > 0)
                         {
                             var value = reader.Read(count == 2 ? 7 : 4);
-                            if (value >= (count == 2 ? 100 : 10)) return Fail("Ungültige Zifferngruppe.", out error);
+                            if (value >= (count == 2 ? 100 : 10)) return Fail("Invalid digit group.", out error);
                             builder.Append(value.ToString(count == 2 ? "D2" : "D1"));
                         }
 
@@ -53,14 +53,14 @@ internal static class SegmentParser
                         for (; count >= 2; count -= 2)
                         {
                             var value = reader.Read(11);
-                            if (value >= 45 * 45) return Fail("Ungültiges Zeichenpaar.", out error);
+                            if (value >= 45 * 45) return Fail("Invalid character pair.", out error);
                             builder.Append(AlphanumericCharset[value / 45]).Append(AlphanumericCharset[value % 45]);
                         }
 
                         if (count == 1)
                         {
                             var value = reader.Read(6);
-                            if (value >= 45) return Fail("Ungültiges Zeichen.", out error);
+                            if (value >= 45) return Fail("Invalid character.", out error);
                             builder.Append(AlphanumericCharset[value]);
                         }
 
@@ -70,7 +70,7 @@ internal static class SegmentParser
                 case 0b0100:
                     {
                         var count = reader.Read(version <= 9 ? 8 : 16);
-                        if (reader.Remaining < count * 8) return Fail("Bytesegment länger als die Daten.", out error);
+                        if (reader.Remaining < count * 8) return Fail("Byte segment is longer than the data.", out error);
                         var bytes = new byte[count];
                         for (var i = 0; i < count; i++)
                         {
@@ -84,7 +84,7 @@ internal static class SegmentParser
                         }
                         catch (DecoderFallbackException)
                         {
-                            return Fail("Bytesegment passt nicht zur angegebenen Zeichenkodierung.", out error);
+                            return Fail("Byte segment does not match the given character encoding.", out error);
                         }
 
                         break;
@@ -108,15 +108,15 @@ internal static class SegmentParser
                             _ => null,
                         };
 
-                        if (eciEncoding is null) return Fail($"ECI {assignment} wird nicht unterstützt.", out error);
+                        if (eciEncoding is null) return Fail($"ECI {assignment} is not supported.", out error);
                         break;
                     }
 
                 default:
-                    return Fail($"Segmentmodus {mode:B4} wird nicht unterstützt.", out error);
+                    return Fail($"Segment mode {mode:B4} is not supported.", out error);
             }
 
-            if (reader.Overrun) return Fail("Segment ragt über das Datenende hinaus.", out error);
+            if (reader.Overrun) return Fail("Segment extends beyond the end of the data.", out error);
         }
 
         text = builder.ToString();

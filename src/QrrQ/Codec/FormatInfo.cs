@@ -2,16 +2,16 @@ using System.Numerics;
 
 namespace QrrQ.Codec;
 
-/// <summary>Ein gültiges Formatwort mit seinem Abstand zu den gelesenen Bits.</summary>
+/// <summary>A valid format word together with its distance to the read bits.</summary>
 internal readonly record struct FormatMatch(int Bits, EccLevel Ecc, int Mask, int Distance, bool Unique);
 
 /// <summary>
-/// Formatinformation (BCH(15,5), 2 Kopien) und Versionsinformation (BCH(18,6)).
+/// Format information (BCH(15,5), 2 copies) and version information (BCH(18,6)).
 /// </summary>
 /// <remarks>
-/// Kernbeobachtung für QrrQ: Transponiert man den Code, werden beide Formatkopien bitweise umgekehrt
-/// gelesen (Kopie 2 tauscht dabei Bit 7 mit dem Dark Module). Keines der 32 gültigen Formatwörter ist
-/// nach dieser Umkehrung wieder gültig (Hamming-Abstand ≥ 3) – die Belegung beider Kopien plant daher
+/// Key observation for QrrQ: when the code is transposed, both format copies are read bit-reversed
+/// (copy 2 also swaps bit 7 with the dark module). None of the 32 valid format words is valid again
+/// after that reversal (Hamming distance >= 3) - so the content of both copies is planned by
 /// <see cref="FormatPlanner"/>.
 /// </remarks>
 internal static class FormatInfo
@@ -76,7 +76,7 @@ internal static class FormatInfo
         }
     }
 
-    /// <summary>Nächstes gültiges Formatwort zu beliebigen 15 Bits.</summary>
+    /// <summary>Nearest valid format word to arbitrary 15 bits.</summary>
     public static FormatMatch Nearest(int bits)
     {
         var best = All[0] with { Distance = int.MaxValue };
@@ -98,7 +98,7 @@ internal static class FormatInfo
         return best with { Unique = unique };
     }
 
-    /// <summary>Dekodiert wie ein Scanner: exakter Treffer in einer Kopie gewinnt, sonst kleinster Abstand ≤ 3.</summary>
+    /// <summary>Decodes like a scanner: an exact hit in one copy wins, otherwise the smallest distance &lt;= 3.</summary>
     public static FormatMatch? Decode(int copy1, int copy2)
     {
         foreach (var candidate in All)

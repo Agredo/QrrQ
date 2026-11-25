@@ -11,7 +11,7 @@ internal enum SegmentMode
     Eci = 0b0111,
 }
 
-/// <summary>Einfache, an <c>List&lt;bool&gt;</c> angelehnte Bitfolge (MSB zuerst).</summary>
+/// <summary>Simple bit sequence modeled on <c>List&lt;bool&gt;</c> (MSB first).</summary>
 internal sealed class BitBuffer
 {
     private readonly List<bool> bits = [];
@@ -29,7 +29,7 @@ internal sealed class BitBuffer
     }
 }
 
-/// <summary>Ein Text, kodiert als ein einziges Segment im jeweils kompaktesten Modus.</summary>
+/// <summary>A text encoded as a single segment in the most compact mode available.</summary>
 internal sealed class Payload
 {
     private const string AlphanumericCharset = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:";
@@ -51,7 +51,7 @@ internal sealed class Payload
 
     public SegmentMode Mode { get; }
 
-    /// <summary>Nicht-ASCII-Texte bekommen ein ECI-26-Präfix, damit Scanner sicher UTF-8 annehmen.</summary>
+    /// <summary>Non-ASCII texts get an ECI 26 prefix so that scanners reliably assume UTF-8.</summary>
     public bool UsesUtf8Eci { get; }
 
     private int CharacterCount => Mode == SegmentMode.Byte ? bytes.Length : Text.Length;
@@ -73,7 +73,7 @@ internal sealed class Payload
         return new Payload(text, SegmentMode.Byte, Encoding.UTF8.GetBytes(text), !Ascii.IsValid(span));
     }
 
-    /// <summary>Länge in Bit ohne Terminator, oder -1 wenn die Zeichenanzahl das Zählfeld sprengt.</summary>
+    /// <summary>Length in bits without terminator, or -1 if the character count exceeds the count field.</summary>
     public int BitLength(int version)
     {
         var countBits = CharacterCountBits(Mode, version);
@@ -92,26 +92,26 @@ internal sealed class Payload
         return (UsesUtf8Eci ? 12 : 0) + 4 + countBits + dataBits;
     }
 
-    /// <summary>Kodiert den Text als ein Segment samt Terminator. Füllbytes bleiben bewusst frei.</summary>
+    /// <summary>Encodes the text as one segment including the terminator. Pad bytes are deliberately left free.</summary>
     public BitBuffer Encode(int version, int capacityBits) => Encode(version, capacityBits, split: -1)!;
 
     /// <summary>
-    /// Gleichwertige Kodierungen desselben Texts: ein Segment oder zwei Segmente mit Trennstelle.
-    /// Jeder Scanner setzt die Segmente wieder zum selben Text zusammen, die Bitmuster unterscheiden sich aber –
-    /// das vervielfacht die Chancen, dass beide Nachrichten in der gemeinsamen Ecke zusammenpassen.
+    /// Equivalent encodings of the same text: one segment or two segments with a split position.
+    /// Every scanner reassembles the segments into the same text, but the bit patterns differ -
+    /// which multiplies the chances that both messages match in the shared corner.
     /// </summary>
     public IEnumerable<BitBuffer> EncodeVariants(int version, int capacityBits, int maxVariants)
     {
         yield return Encode(version, capacityBits);
 
-        // Texte mit ECI-Kennung (UTF-8) bleiben ein Segment: OpenCV wertet nach einem ECI-Wechsel
-        // nur das letzte Segment korrekt aus (gemessen mit OpenCV 5.0).
+        // Texts with an ECI identifier (UTF-8) stay a single segment: after an ECI switch OpenCV
+        // decodes only the last segment correctly (measured with OpenCV 5.0).
         if (UsesUtf8Eci)
         {
             yield break;
         }
 
-        // Trennstellen: nie mitten in einem UTF-8-Zeichen, gleichmäßig über den Text verteilt.
+        // Split positions: never inside a UTF-8 character, distributed evenly over the text.
         int[] splits = Mode == SegmentMode.Byte
             ? [.. Enumerable.Range(1, Math.Max(0, bytes.Length - 1)).Where(p => (bytes[p] & 0xC0) != 0x80)]
             : [.. Enumerable.Range(1, Math.Max(0, Text.Length - 1))];
@@ -150,8 +150,8 @@ internal sealed class Payload
             return null;
         }
 
-        // Terminator und Null-Bits bis zur Bytegrenze sind fest: OpenCV liest bei ECI-Codes über den
-        // Terminator hinaus bis zur Bytegrenze. Erst die Füllbytes danach sind frei wählbar.
+        // Terminator and zero bits up to the byte boundary are fixed: for ECI codes OpenCV reads past
+        // the terminator up to the byte boundary. Only the pad bytes after that are freely choosable.
         buffer.Append(0, Math.Min(4, capacityBits - buffer.Count));
         buffer.Append(0, Math.Min((8 - buffer.Count % 8) % 8, capacityBits - buffer.Count));
         return buffer;

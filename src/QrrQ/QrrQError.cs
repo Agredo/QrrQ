@@ -1,55 +1,55 @@
 namespace QrrQ;
 
 /// <summary>
-/// Grund, warum kein Spiegel-QR-Code erzeugt werden konnte.
-/// Geschlossene Hierarchie (C# 15): Alle Fälle stehen in dieser Datei,
-/// ein <c>switch</c> darüber ist ohne Default-Zweig vollständig.
+/// Reason why no mirror QR code could be produced.
+/// Closed hierarchy (C# 15): all cases live in this file, so a <c>switch</c>
+/// over it is exhaustive without a default branch.
 /// </summary>
 public closed record class QrrQError;
 
-/// <summary>Mindestens ein Text passt in keiner erlaubten Version.</summary>
-/// <param name="NormalBits">Benötigte Bits für den normalen Text (in der größten Version).</param>
-/// <param name="MirroredBits">Benötigte Bits für den gespiegelten Text.</param>
-/// <param name="MaxVersion">Größte geprüfte Version.</param>
+/// <summary>At least one text does not fit in any allowed version.</summary>
+/// <param name="NormalBits">Bits required for the normal text (in the largest version).</param>
+/// <param name="MirroredBits">Bits required for the mirrored text.</param>
+/// <param name="MaxVersion">Largest version that was checked.</param>
 public sealed record class PayloadTooLong(int NormalBits, int MirroredBits, int MaxVersion) : QrrQError;
 
-/// <summary>Die gewählten Fehlerkorrekturstufen lassen keinen Platz für zwei Inhalte.</summary>
-/// <param name="Normal">Stufe für das normale Lesen.</param>
-/// <param name="Mirrored">Stufe für das gespiegelte Lesen.</param>
+/// <summary>The chosen error correction levels leave no room for two payloads.</summary>
+/// <param name="Normal">Level used for normal reading.</param>
+/// <param name="Mirrored">Level used for mirrored reading.</param>
 public sealed record class IncompatibleEccLevels(EccLevel Normal, EccLevel Mirrored) : QrrQError;
 
-/// <summary>Die Texte passen, aber im Versionsbereich wurde keine Lösung gefunden.</summary>
-/// <param name="MinVersion">Kleinste geprüfte Version.</param>
-/// <param name="MaxVersion">Größte geprüfte Version.</param>
-/// <param name="MaxCorrectedCodewords">Erlaubte vorkorrigierte Codewörter.</param>
+/// <summary>The texts fit, but no solution was found inside the version range.</summary>
+/// <param name="MinVersion">Smallest version that was checked.</param>
+/// <param name="MaxVersion">Largest version that was checked.</param>
+/// <param name="MaxCorrectedCodewords">Allowed pre-corrected codewords.</param>
 public sealed record class NoSolutionFound(int MinVersion, int MaxVersion, int MaxCorrectedCodewords) : QrrQError;
 
-/// <summary>Erweiterungsmember für <see cref="QrrQError"/>.</summary>
+/// <summary>Extension members for <see cref="QrrQError"/>.</summary>
 public static class QrrQErrorExtensions
 {
     extension(QrrQError error)
     {
-        /// <summary>Lesbare Fehlerbeschreibung.</summary>
+        /// <summary>Human readable error description.</summary>
         public string Message => error switch
         {
             PayloadTooLong e =>
-                $"Die Texte sind zu lang: normal {e.NormalBits} Bit, gespiegelt {e.MirroredBits} Bit – " +
-                $"auch Version {e.MaxVersion} reicht nicht. Texte kürzen oder niedrigere Fehlerkorrektur wählen.",
+                $"The texts are too long: normal {e.NormalBits} bits, mirrored {e.MirroredBits} bits - " +
+                $"even version {e.MaxVersion} is not enough. Shorten the texts or pick a lower error correction level.",
             IncompatibleEccLevels e =>
-                $"Mit {e.Normal.Letter}/{e.Mirrored.Letter} bleibt kein Platz für zwei Inhalte: Die Datenkapazitäten " +
-                "beider Richtungen müssen zusammen größer sein als alle Codewörter. H nur mit L, Q mit L oder M kombinieren.",
+                $"With {e.Normal.Letter}/{e.Mirrored.Letter} there is no room for two payloads: the data capacities " +
+                "of both directions combined must be larger than all codewords. Combine H only with L, Q with L or M.",
             NoSolutionFound e =>
-                $"Keine Lösung in Version {e.MinVersion}–{e.MaxVersion} " +
+                $"No solution in versions {e.MinVersion}-{e.MaxVersion} " +
                 (e.MaxCorrectedCodewords == 0
-                    ? "ohne Fehlerkorrektur-Reserve. Tipp: MaxCorrectedCodewords > 0 erlauben oder den Versionsbereich erweitern."
-                    : $"mit höchstens {e.MaxCorrectedCodewords} vorkorrigierten Codewörtern."),
+                    ? "without error correction budget. Tip: allow MaxCorrectedCodewords > 0 or widen the version range."
+                    : $"with at most {e.MaxCorrectedCodewords} pre-corrected codewords."),
         };
     }
 }
 
-/// <summary>Wird von <see cref="QrrQGenerator.Create"/> geworfen.</summary>
+/// <summary>Thrown by <see cref="QrrQGenerator.Create"/>.</summary>
 public sealed class QrrQException(QrrQError error) : Exception(error.Message)
 {
-    /// <summary>Der strukturierte Fehlergrund.</summary>
+    /// <summary>The structured error reason.</summary>
     public QrrQError Error { get; } = error;
 }

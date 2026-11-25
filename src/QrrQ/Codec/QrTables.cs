@@ -1,12 +1,12 @@
 namespace QrrQ.Codec;
 
-/// <summary>Tabellen aus ISO/IEC 18004 (Blockstruktur, Codewortanzahlen, Ausrichtungsmuster).</summary>
+/// <summary>Tables from ISO/IEC 18004 (block structure, codeword counts, alignment patterns).</summary>
 internal static class QrTables
 {
     public const int MinVersion = 1;
     public const int MaxVersion = 40;
 
-    /// <summary>ECC-Codewörter pro Block, Index [stufe * 41 + version], Stufenreihenfolge L, M, Q, H.</summary>
+    /// <summary>ECC codewords per block, index [level * 41 + version], level order L, M, Q, H.</summary>
     private static ReadOnlySpan<byte> EccCodewordsPerBlock =>
     [
         // L
@@ -23,7 +23,7 @@ internal static class QrTables
         30, 24, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30,
     ];
 
-    /// <summary>Anzahl Fehlerkorrekturblöcke, Index [stufe * 41 + version].</summary>
+    /// <summary>Number of error correction blocks, index [level * 41 + version].</summary>
     private static ReadOnlySpan<byte> ErrorCorrectionBlocks =>
     [
         // L
@@ -44,7 +44,7 @@ internal static class QrTables
 
     public static int BlockCount(int version, EccLevel ecc) => ErrorCorrectionBlocks[(int)ecc * 41 + version];
 
-    /// <summary>Module, die nach Abzug aller Funktionsmuster für Daten übrig bleiben (inkl. Restbits).</summary>
+    /// <summary>Modules left for data after subtracting all function patterns (including remainder bits).</summary>
     public static int RawDataModules(int version)
     {
         var result = (16 * version + 128) * version + 64;
@@ -63,7 +63,7 @@ internal static class QrTables
 
     public static int TotalCodewords(int version) => RawDataModules(version) / 8;
 
-    /// <summary>Zeilen-/Spaltenkoordinaten der Ausrichtungsmuster-Mittelpunkte.</summary>
+    /// <summary>Row/column coordinates of the alignment pattern centers.</summary>
     public static int[] AlignmentPositions(int version)
     {
         if (version == 1)

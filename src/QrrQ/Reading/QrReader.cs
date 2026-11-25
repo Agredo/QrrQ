@@ -4,34 +4,34 @@ using QrrQ.Codec;
 
 namespace QrrQ.Reading;
 
-/// <summary>Ergebnis eines Lesevorgangs.</summary>
-/// <param name="Text">Dekodierter Inhalt.</param>
-/// <param name="Version">QR-Version 1–40.</param>
-/// <param name="Ecc">Fehlerkorrekturstufe laut Formatinformation.</param>
-/// <param name="Mask">Datenmaske 0–7.</param>
-/// <param name="FormatDistance">Hamming-Abstand der besten Formatkopie (0 = exakt).</param>
-/// <param name="CorrectedCodewords">Codewörter, die per Reed-Solomon repariert werden mussten.</param>
+/// <summary>Result of a read operation.</summary>
+/// <param name="Text">Decoded content.</param>
+/// <param name="Version">QR version 1-40.</param>
+/// <param name="Ecc">Error correction level from the format information.</param>
+/// <param name="Mask">Data mask 0-7.</param>
+/// <param name="FormatDistance">Hamming distance of the best format copy (0 = exact).</param>
+/// <param name="CorrectedCodewords">Codewords that had to be repaired by Reed-Solomon.</param>
 public sealed record QrReadResult(string Text, int Version, EccLevel Ecc, int Mask, int FormatDistance, int CorrectedCodewords);
 
 /// <summary>
-/// Dekodiert ein <see cref="QrMatrix"/>-Raster wie ein Scanner nach der Bildverarbeitung:
-/// Lage normalisieren, Format lesen, demaskieren, Reed-Solomon korrigieren, Segmente parsen.
-/// Gespiegelt wird bewusst <b>nicht</b> automatisch – genau wie bei Scannern, deren normaler Leseweg gelingt.
+/// Decodes a <see cref="QrMatrix"/> grid like a scanner after image processing:
+/// normalize the orientation, read the format, unmask, correct with Reed-Solomon, parse segments.
+/// Mirroring is deliberately <b>not</b> done automatically - just like with scanners whose normal reading path succeeds.
 /// </summary>
 public static class QrReader
 {
-    /// <summary>Liest das Raster oder wirft eine <see cref="FormatException"/>.</summary>
+    /// <summary>Reads the grid or throws a <see cref="FormatException"/>.</summary>
     public static QrReadResult Read(QrMatrix matrix) =>
         TryRead(matrix, out var result, out var error) ? result : throw new FormatException(error);
 
-    /// <summary>Versucht, das Raster zu lesen. Drehungen um 90°/180°/270° werden erkannt.</summary>
+    /// <summary>Tries to read the grid. Rotations by 90/180/270 degrees are detected.</summary>
     public static bool TryRead(QrMatrix matrix, [NotNullWhen(true)] out QrReadResult? result, [NotNullWhen(false)] out string? error)
     {
         ArgumentNullException.ThrowIfNull(matrix);
         if (!TryNormalizeOrientation(matrix, out var upright))
         {
             result = null;
-            error = "Die Finder-Muster ergeben keine eindeutige Lage.";
+            error = "The finder patterns do not yield an unambiguous orientation.";
             return false;
         }
 
@@ -44,7 +44,7 @@ public static class QrReader
         var size = matrix.Size;
         if (size < 21 || size > 177 || (size - 17) % 4 != 0)
         {
-            error = $"Ungültige Symbolgröße {size}.";
+            error = $"Invalid symbol size {size}.";
             return false;
         }
 
@@ -54,7 +54,7 @@ public static class QrReader
         var copy2 = FormatInfo.Read(modules, size, copy: 2);
         if (FormatInfo.Decode(copy1, copy2) is not { } format)
         {
-            error = "Formatinformation nicht lesbar.";
+            error = "Format information not readable.";
             return false;
         }
 
@@ -84,7 +84,7 @@ public static class QrReader
             var fixedCount = ReedSolomon.Correct(codeword, blocks.EccPerBlock);
             if (fixedCount < 0)
             {
-                error = $"Reed-Solomon-Block {block} ist nicht korrigierbar.";
+                error = $"Reed-Solomon block {block} is not correctable.";
                 return false;
             }
 
@@ -120,7 +120,7 @@ public static class QrReader
         var turns = (topLeft, topRight, bottomLeft, bottomRight) switch
         {
             (true, true, true, false) => 0,
-            (true, false, true, true) => 1, // Ecke ohne Finder oben rechts → einmal im Uhrzeigersinn
+            (true, false, true, true) => 1, // corner without a finder at the top right -> rotate once clockwise
             (false, true, true, true) => 2,
             (true, true, false, true) => 3,
             _ => -1,

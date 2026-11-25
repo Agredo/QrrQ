@@ -1,8 +1,8 @@
 namespace QrrQ.Codec;
 
 /// <summary>
-/// Strafpunkte nach ISO/IEC 18004 (lange Läufe, 2×2-Blöcke, finderähnliche Muster, Hell/Dunkel-Balance).
-/// Die Wertung ist transpositionsinvariant – sie gilt also für beide Leserichtungen gleichermaßen.
+/// Penalty points according to ISO/IEC 18004 (long runs, 2×2 blocks, finder-like patterns, light/dark balance).
+/// The score is transposition invariant - so it applies equally to both reading directions.
 /// </summary>
 internal static class Penalty
 {
@@ -72,7 +72,7 @@ internal static class Penalty
             score += run - 2;
         }
 
-        // 11er-Fenster mit vier hellen Ruhezonen-Modulen links und rechts.
+        // 11-module window with four light quiet-zone modules on either side.
         var window = 0;
         for (var i = -4; i < size + 4; i++)
         {

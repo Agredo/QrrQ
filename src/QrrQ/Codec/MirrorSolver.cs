@@ -16,34 +16,35 @@ internal sealed record MirrorSolution(
 {
     public int CorrectedTotal => Normal.CorrectedCodewords + Mirrored.CorrectedCodewords;
 
-    /// <summary>Kleiner ist besser: erst Fehlerfreiheit der Daten, dann exakte Formatinfo, dann Optik.</summary>
+    /// <summary>Smaller is better: first data error-freeness, then exact format info, then visual appearance.</summary>
     public long Score => CorrectedTotal * 1_000_000L + Format.Cost * 10_000L + Penalty;
 }
 
 /// <summary>
-/// Findet ein Modulraster M, das normal gelesen Text A und transponiert (= gespiegelt und gedreht)
-/// gelesen Text B ergibt.
+/// Finds a module grid M that reads as text A when upright and as text B when transposed
+/// (= mirrored and rotated).
 /// </summary>
 /// <remarks>
 /// <para>
-/// Unbekannte sind die Datenmodule x₀ … x_{D-1} von M (Zickzack-Reihenfolge). Für Richtung A ist
-/// Strombit k = x_k ⊕ maskA(k); für Richtung B ist Strombit k = x_{σ(k)} ⊕ maskB(k), wobei σ die
-/// Transposition auf den Datenmodulen ist. Beides ist affin in x.
+/// The unknowns are the data modules x₀ … x_{D-1} of M (zigzag order). For direction A stream bit
+/// k = x_k ⊕ maskA(k); for direction B stream bit k = x_{σ(k)} ⊕ maskB(k), where σ is the transposition
+/// on the data modules. Both are affine in x.
 /// </para>
 /// <para>
-/// Bedingungen: (1) die Nachrichtenbits beider Texte (fixieren einzelne x), (2) alle Reed-Solomon-Syndrome
-/// beider Richtungen sind 0. Weil GF(256)-Multiplikation mit einer Konstanten GF(2)-linear ist, zerfällt jedes
-/// Syndrom in 8 Bitgleichungen. Freiheitsgrade liefern die Füllbytes nach dem Terminator, die Scanner ignorieren.
+/// Constraints: (1) the message bits of both texts (they fix individual x), (2) all Reed-Solomon syndromes
+/// of both directions are 0. Because multiplying by a constant in GF(256) is GF(2)-linear, every syndrome
+/// splits into 8 bit equations. The degrees of freedom come from the pad bytes after the terminator, which
+/// scanners ignore.
 /// </para>
 /// <para>
-/// Die rechte Seite hängt nur über Konstanten von den Masken ab. Alle 8 × 8 Masken-Kombinationen werden daher als
-/// 64 Spuren eines <see cref="ulong"/> in <b>einer</b> Elimination gelöst.
+/// The right-hand side depends on the masks only through constants. All 8 × 8 mask combinations are therefore
+/// solved as 64 lanes of a <see cref="ulong"/> in <b>one</b> elimination.
 /// </para>
 /// <para>
-/// Unvermeidbar ist eine kleine Überlappung: Beide Nachrichten beginnen unten rechts, und diese Ecke bildet die
-/// Transposition auf sich selbst ab. Dort müssen die Bits beider Texte übereinstimmen – das regelt die Maskenwahl.
-/// Gelingt das nicht, darf (optional) ein Codewort pro Konflikt einer Seite „geopfert“ werden; der Scanner
-/// repariert es dann per Fehlerkorrektur.
+/// A small overlap is unavoidable: both messages start in the bottom right, and that corner maps onto itself
+/// under the transposition. There the bits of both texts must agree - which is what the mask choice governs.
+/// If that does not work out, one codeword per conflict of one side may (optionally) be sacrificed; the scanner
+/// then repairs it through error correction.
 /// </para>
 /// </remarks>
 internal sealed class MirrorSolver
@@ -78,7 +79,7 @@ internal sealed class MirrorSolver
         this.settings = settings;
         variables = layout.DataPositions.Length;
 
-        // Spur = 8 · MaskeA + MaskeB. Bit „Spur“ gesetzt ⇔ die Maske ist an diesem Modul dunkel.
+        // Lane = 8 · maskA + maskB. Bit "lane" set <=> the mask is dark at this module.
         maskLanesA = new ulong[variables];
         maskLanesB = new ulong[variables];
         for (var k = 0; k < variables; k++)
@@ -101,7 +102,7 @@ internal sealed class MirrorSolver
             streamBitB[layout.TransposedVariable[s]] = s;
         }
 
-        // Nur Maskenpaare, für die sich eine scannerfeste Formatbelegung findet.
+        // Only mask pairs for which a scanner-proof format assignment exists.
         for (var maskA = 0; maskA < 8; maskA++)
         {
             for (var maskB = 0; maskB < 8; maskB++)
@@ -114,7 +115,7 @@ internal sealed class MirrorSolver
         }
     }
 
-    /// <summary>Grobe Vorprüfung: Passen beide Texte, und bleiben genug Freiheitsgrade?</summary>
+    /// <summary>Rough pre-check: do both texts fit and do enough degrees of freedom remain?</summary>
     public static bool Fits(int version, EccLevel eccA, EccLevel eccB, Payload a, Payload b)
     {
         var blocksA = BlockLayout.Get(version, eccA);
@@ -131,7 +132,7 @@ internal sealed class MirrorSolver
         return QrTables.RawDataModules(version) - fixedBits >= equations;
     }
 
-    /// <summary>Gibt es in dieser Version überhaupt Platz für zwei Inhalte (unabhängig von den Texten)?</summary>
+    /// <summary>Does this version have room for two payloads at all (regardless of the texts)?</summary>
     public static bool HasHeadroom(int version, EccLevel eccA, EccLevel eccB)
     {
         var total = QrTables.TotalCodewords(version);
@@ -164,7 +165,7 @@ internal sealed class MirrorSolver
         messageB = MessageBits(bitsB, blocksB);
     }
 
-    /// <summary>Spuren, in denen ein von beiden Nachrichten belegtes Modul zwei verschiedene Werte bräuchte.</summary>
+    /// <summary>Lanes in which a module used by both messages would need two different values.</summary>
     private ulong ConflictLanes()
     {
         var conflicts = 0UL;
@@ -183,10 +184,10 @@ internal sealed class MirrorSolver
 
     private bool FixedByB(int k) => messageB[streamBitB[k]] >= 0;
 
-    /// <summary>Modulwert x_k (pro Spur), mit dem Richtung A ihr Nachrichtenbit sieht.</summary>
+    /// <summary>Module value x_k (per lane) with which direction A sees its message bit.</summary>
     private ulong ValueA(int k) => (messageA[k] == 1 ? AllLanes : 0) ^ maskLanesA[k];
 
-    /// <summary>Modulwert x_k (pro Spur), mit dem Richtung B ihr Nachrichtenbit sieht.</summary>
+    /// <summary>Module value x_k (per lane) with which direction B sees its message bit.</summary>
     private ulong ValueB(int k)
     {
         var s = streamBitB[k];
@@ -200,7 +201,7 @@ internal sealed class MirrorSolver
         var variantsA = payloadA.EncodeVariants(layout.Version, capacityA, MaxEncodingVariants).ToArray();
         var variantsB = payloadB.EncodeVariants(layout.Version, capacityB, MaxEncodingVariants).ToArray();
 
-        // Kurze Kodierungen zuerst; die Ein-Segment-Kodierung beider Texte ist immer das erste Paar.
+        // Short encodings first; the single-segment encoding of both texts is always the first pair.
         var pairs =
             from a in variantsA.Index()
             from b in variantsB.Index()
@@ -297,8 +298,8 @@ internal sealed class MirrorSolver
     }
 
     /// <summary>
-    /// Gierige Knotenüberdeckung: Jeder Konflikt verlangt, dass entweder das A-Codewort oder das B-Codewort
-    /// geopfert wird. Pro Block höchstens ⌊ECC/2⌋, pro Richtung höchstens das Budget.
+    /// Greedy vertex cover: every conflict requires that either the A codeword or the B codeword
+    /// is sacrificed. At most ⌊ECC/2⌋ per block, at most the budget per direction.
     /// </summary>
     private bool TryCover(List<(int A, int B)> conflicts, out HashSet<int> resultA, out HashSet<int> resultB)
     {
@@ -367,8 +368,8 @@ internal sealed class MirrorSolver
             }
         }
 
-        // Geopferte Codewörter: Das „wahre“ Codewort, das der Scanner rekonstruiert, ist dort frei
-        // (Hilfsspalten) bzw. gleich dem Nachrichtenbit – unabhängig vom gedruckten Modul.
+        // Sacrificed codewords: the "true" codeword that the scanner reconstructs is free there
+        // (auxiliary columns) or equal to the message bit - independent of the printed module.
         var columns = variables;
         var auxiliaryA = new Dictionary<int, int>();
         var auxiliaryB = new Dictionary<int, int>();
@@ -421,8 +422,8 @@ internal sealed class MirrorSolver
     }
 
     /// <summary>
-    /// Fügt pro Block und Syndrom i die 8 Bitgleichungen Σⱼ cⱼ·α^{i(L-1-j)} = 0 hinzu.
-    /// <paramref name="term"/> liefert für ein Strombit die Spalte (oder -1) und den konstanten Anteil pro Spur.
+    /// Adds the 8 bit equations Σⱼ cⱼ·α^{i(L-1-j)} = 0 per block and syndrome i.
+    /// <paramref name="term"/> returns the column (or -1) and the constant part per lane for a stream bit.
     /// </summary>
     private static void AddSyndromeRows(Gf2System system, BlockLayout blocks, Func<int, (int Column, ulong Constant)> term)
     {
@@ -505,7 +506,7 @@ internal sealed class MirrorSolver
                         : (assignment[k >> 6] >> k & 1) != 0;
                 }
 
-                // Kopie 2 enthält auf Bit 7 das Dark Module der gespiegelten Lesart (immer 1).
+                // Copy 2 carries the dark module of the mirrored reading on bit 7 (always 1).
                 FormatInfo.Draw(grid, size, format.Copy1, copy: 1, transposed: false);
                 FormatInfo.Draw(grid, size, format.Copy2, copy: 2, transposed: false);
                 grid[(size - 8) * size + 8] = true;
@@ -526,7 +527,7 @@ internal sealed class MirrorSolver
         var size = layout.Size;
         var matrix = new QrMatrix(size, grid);
 
-        // Sicherheitsnetz: Jede Lösung wird in beiden Richtungen vollständig dekodiert.
+        // Safety net: every solution is fully decoded in both directions.
         if (!QrReader.TryReadUpright(matrix, out var normal, out _) ||
             normal.Text != payloadA.Text || normal.Mask != maskA || normal.Ecc != blocksA.Ecc)
         {

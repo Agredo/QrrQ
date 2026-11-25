@@ -5,8 +5,8 @@ using QrrQ.Rendering;
 namespace QrrQ;
 
 /// <summary>
-/// Ein fertiger Spiegel-QR-Code. <see cref="Matrix"/> ist das zu druckende Motiv;
-/// normal gescannt ergibt es <see cref="NormalText"/>, im Spiegel <see cref="MirroredText"/>.
+/// A finished mirror QR code. <see cref="Matrix"/> is the artwork to print;
+/// scanned normally it yields <see cref="NormalText"/>, in a mirror <see cref="MirroredText"/>.
 /// </summary>
 public sealed class QrrQCode
 {
@@ -26,58 +26,58 @@ public sealed class QrrQCode
         MirroredFormatBitErrors = solution.Format.DistanceMirrored;
     }
 
-    /// <summary>Inhalt beim normalen Scannen.</summary>
+    /// <summary>Payload for normal scanning.</summary>
     public string NormalText { get; }
 
-    /// <summary>Inhalt beim Scannen des Spiegelbilds.</summary>
+    /// <summary>Payload for scanning the mirror image.</summary>
     public string MirroredText { get; }
 
-    /// <summary>QR-Version 1–40.</summary>
+    /// <summary>QR version 1-40.</summary>
     public int Version { get; }
 
-    /// <summary>Kantenlänge in Modulen.</summary>
+    /// <summary>Edge length in modules.</summary>
     public int Size => Matrix.Size;
 
-    /// <summary>Fehlerkorrekturstufe der normalen Leserichtung.</summary>
+    /// <summary>Error correction level of the normal reading direction.</summary>
     public EccLevel NormalEcc { get; }
 
-    /// <summary>Fehlerkorrekturstufe der gespiegelten Leserichtung.</summary>
+    /// <summary>Error correction level of the mirrored reading direction.</summary>
     public EccLevel MirroredEcc { get; }
 
-    /// <summary>Datenmaske der normalen Leserichtung.</summary>
+    /// <summary>Data mask of the normal reading direction.</summary>
     public int NormalMask { get; }
 
-    /// <summary>Datenmaske der gespiegelten Leserichtung.</summary>
+    /// <summary>Data mask of the mirrored reading direction.</summary>
     public int MirroredMask { get; }
 
-    /// <summary>Codewörter, die beim normalen Lesen schon ab Werk korrigiert werden (0 = fehlerfrei).</summary>
+    /// <summary>Codewords that normal reading already repairs out of the box (0 = error-free).</summary>
     public int NormalCorrectedCodewords { get; }
 
-    /// <summary>Codewörter, die beim gespiegelten Lesen schon ab Werk korrigiert werden (0 = fehlerfrei).</summary>
+    /// <summary>Codewords that mirrored reading already repairs out of the box (0 = error-free).</summary>
     public int MirroredCorrectedCodewords { get; }
 
     /// <summary>
-    /// Bitabweichung der Formatinformation beim normalen Lesen (0 = exakt; bis 3 korrigiert jeder Scanner).
-    /// Ein Formatwort ist gespiegelt nie gültig – je nach Maskenpaar wird daher 1 Bit „geliehen“.
+    /// Bit deviation of the format information for normal reading (0 = exact; up to 3 is corrected by every scanner).
+    /// A format word is never valid when mirrored - so depending on the mask pair 1 bit is "borrowed".
     /// </summary>
     public int NormalFormatBitErrors { get; }
 
-    /// <summary>Bitabweichung der Formatinformation beim gespiegelten Lesen.</summary>
+    /// <summary>Bit deviation of the format information for mirrored reading.</summary>
     public int MirroredFormatBitErrors { get; }
 
-    /// <summary>Beide Richtungen sind fehlerfreie Reed-Solomon-Codewörter.</summary>
+    /// <summary>Both directions are error-free Reed-Solomon codewords.</summary>
     public bool IsErrorFree => NormalCorrectedCodewords == 0 && MirroredCorrectedCodewords == 0;
 
-    /// <summary>Das zu druckende Modulraster.</summary>
+    /// <summary>The module grid to print.</summary>
     public QrMatrix Matrix { get; }
 
-    /// <summary>Das Raster so, wie es im Spiegel erscheint (links/rechts vertauscht).</summary>
+    /// <summary>The grid as it appears in a mirror (left/right swapped).</summary>
     public QrMatrix MirroredMatrix => field ??= Matrix.FlipHorizontal();
 
-    /// <summary>PNG-Datei des Codes.</summary>
-    /// <param name="moduleSize">Pixel pro Modul.</param>
-    /// <param name="quietZone">Ruhezone in Modulen (Standard laut Norm: 4).</param>
-    /// <param name="mirrored"><c>true</c> liefert das Spiegelbild – praktisch zum Testen am Bildschirm.</param>
+    /// <summary>PNG image of the code.</summary>
+    /// <param name="moduleSize">Pixels per module.</param>
+    /// <param name="quietZone">Quiet zone in modules (standard value per specification: 4).</param>
+    /// <param name="mirrored"><c>true</c> returns the mirror image - handy for testing on screen.</param>
     public byte[] ToPng(int moduleSize = 10, int quietZone = 4, bool mirrored = false)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(moduleSize, 1);
@@ -85,11 +85,11 @@ public sealed class QrrQCode
         return PngEncoder.Encode(mirrored ? MirroredMatrix : Matrix, moduleSize, quietZone);
     }
 
-    /// <summary>Beide Ansichten als PNG: das Druckmotiv und sein Spiegelbild.</summary>
+    /// <summary>Both views as PNG: the artwork to print and its mirror image.</summary>
     public (byte[] Normal, byte[] Mirrored) ToPngPair(int moduleSize = 10, int quietZone = 4) =>
         (ToPng(moduleSize, quietZone), ToPng(moduleSize, quietZone, mirrored: true));
 
-    /// <summary>SVG-Grafik des Codes.</summary>
+    /// <summary>SVG graphic of the code.</summary>
     public string ToSvg(int moduleSize = 10, int quietZone = 4, bool mirrored = false, string darkColor = "#000", string lightColor = "#fff")
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(moduleSize, 1);
@@ -97,11 +97,11 @@ public sealed class QrrQCode
         return SvgRenderer.Render(mirrored ? MirroredMatrix : Matrix, moduleSize, quietZone, darkColor, lightColor);
     }
 
-    /// <summary>Konsolenvorschau aus Unicode-Halbblöcken.</summary>
+    /// <summary>Console preview made of Unicode half blocks.</summary>
     public string ToText(bool mirrored = false, bool darkBackground = true, int quietZone = 2) =>
         TextRenderer.Render(mirrored ? MirroredMatrix : Matrix, quietZone, darkBackground);
 
-    /// <summary>Liest beide Ansichten mit dem eingebauten Decoder – wie ein Scanner nach der Bildverarbeitung.</summary>
+    /// <summary>Reads both views with the built-in decoder - like a scanner after image processing.</summary>
     public (QrReadResult Normal, QrReadResult Mirrored) Verify() =>
         (QrReader.Read(Matrix), QrReader.Read(MirroredMatrix));
 

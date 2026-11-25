@@ -5,10 +5,10 @@ namespace QrrQ.Tests;
 public class RoundTripTests
 {
     [Theory]
-    [InlineData("Falsche Fährte", "Code: 4711")]
-    [InlineData("https://example.com/raetsel", "geheim")]
-    [InlineData("0815", "Schau in den Spiegel")]
-    [InlineData("Raum 3 – Tresor links", "https://qrrq.de/x")]
+    [InlineData("False trail", "Code: 4711")]
+    [InlineData("https://example.com/puzzle", "secret")]
+    [InlineData("0815", "Look in the mirror")]
+    [InlineData("Room 3 - safe on the left", "https://qrrq.de/x")]
     public void Create_reads_both_directions(string normal, string mirrored)
     {
         var code = QrrQGenerator.Create(normal, mirrored);
@@ -27,7 +27,7 @@ public class RoundTripTests
     [InlineData(3)]
     public void Scanner_handles_all_right_angle_rotations(int quarterTurns)
     {
-        var code = QrrQGenerator.Create("Falsche Fährte", "Code: 4711");
+        var code = QrrQGenerator.Create("False trail", "Code: 4711");
         var matrix = code.Matrix;
         for (var turn = 0; turn < quarterTurns; turn++)
         {
@@ -40,19 +40,19 @@ public class RoundTripTests
     [Fact]
     public void Mirrored_view_reads_the_second_text()
     {
-        var code = QrrQGenerator.Create("Falsche Fährte", "Code: 4711");
+        var code = QrrQGenerator.Create("False trail", "Code: 4711");
 
         Assert.Equal(code.NormalText, QrReader.Read(code.Matrix).Text);
         Assert.Equal(code.MirroredText, QrReader.Read(code.MirroredMatrix).Text);
     }
 
     [Fact]
-    public void Umptext_and_emoji_are_encoded_as_utf8()
+    public void Umlaut_text_and_emoji_are_encoded_as_utf8()
     {
-        var code = QrrQGenerator.Create("Grüße aus Bremen 🌊", "WLAN: Spiegel123");
+        var code = QrrQGenerator.Create("Smörgåsbord café 🌊", "WiFi: Mirror123");
 
-        Assert.Equal("Grüße aus Bremen 🌊", code.Verify().Normal.Text);
-        Assert.Equal("WLAN: Spiegel123", code.Verify().Mirrored.Text);
+        Assert.Equal("Smörgåsbord café 🌊", code.Verify().Normal.Text);
+        Assert.Equal("WiFi: Mirror123", code.Verify().Mirrored.Text);
     }
 
     [Fact]
@@ -70,7 +70,7 @@ public class RoundTripTests
     [Fact]
     public void Error_free_code_survives_a_couple_of_flipped_modules()
     {
-        var code = QrrQGenerator.Create("Falsche Fährte", "Code: 4711");
+        var code = QrrQGenerator.Create("False trail", "Code: 4711");
         Assert.True(code.IsErrorFree);
 
         var modules = code.Matrix.ToArray();
@@ -85,7 +85,7 @@ public class RoundTripTests
     [Fact]
     public void Format_information_stays_within_correction_range()
     {
-        var code = QrrQGenerator.Create("Falsche Fährte", "Code: 4711");
+        var code = QrrQGenerator.Create("False trail", "Code: 4711");
 
         Assert.InRange(code.NormalFormatBitErrors, 0, 3);
         Assert.InRange(code.MirroredFormatBitErrors, 0, 3);

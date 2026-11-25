@@ -1,9 +1,9 @@
 namespace QrrQ.Algebra;
 
-/// <summary>Reed-Solomon-Prüfung und -Korrektur für QR-Blöcke (Nullstellen α⁰ … αᵉ⁻¹).</summary>
+/// <summary>Reed-Solomon validation and correction for QR blocks (roots α⁰ … αᵉ⁻¹).</summary>
 internal static class ReedSolomon
 {
-    /// <summary>Syndrom Sᵢ = c(αⁱ) mit c₀ als höchstem Koeffizienten.</summary>
+    /// <summary>Syndrome Sᵢ = c(αⁱ) with c₀ as the highest coefficient.</summary>
     public static byte Syndrome(ReadOnlySpan<byte> codeword, int index)
     {
         var x = Gf256.Exp(index);
@@ -17,9 +17,9 @@ internal static class ReedSolomon
     }
 
     /// <summary>
-    /// Korrigiert <paramref name="codeword"/> in-place (Berlekamp-Massey, Chien, Forney).
+    /// Corrects <paramref name="codeword"/> in place (Berlekamp-Massey, Chien, Forney).
     /// </summary>
-    /// <returns>Anzahl korrigierter Codewörter, oder -1 wenn der Block nicht korrigierbar ist.</returns>
+    /// <returns>Number of corrected codewords, or -1 if the block cannot be corrected.</returns>
     public static int Correct(Span<byte> codeword, int eccCount)
     {
         var syndromes = new byte[eccCount];
@@ -35,7 +35,7 @@ internal static class ReedSolomon
             return 0;
         }
 
-        // Berlekamp-Massey: Fehlerortungspolynom Λ (Koeffizienten aufsteigend, Λ₀ = 1).
+        // Berlekamp-Massey: error locator polynomial Λ (coefficients ascending, Λ₀ = 1).
         var locator = new byte[eccCount + 1];
         var previous = new byte[eccCount + 1];
         var scratch = new byte[eccCount + 1];
@@ -88,7 +88,7 @@ internal static class ReedSolomon
             return -1;
         }
 
-        // Chien-Suche: Fehler an Grad p ⇔ Λ(α⁻ᵖ) = 0.
+        // Chien search: error at degree p <=> Λ(α⁻ᵖ) = 0.
         List<int> errorDegrees = [with(capacity: degree)];
         for (var p = 0; p < codeword.Length; p++)
         {
@@ -113,7 +113,7 @@ internal static class ReedSolomon
             }
         }
 
-        // Forney (erste Nullstelle α⁰): eₖ = Xₖ · Ω(Xₖ⁻¹) / Λ'(Xₖ⁻¹)
+        // Forney (first root α⁰): eₖ = Xₖ · Ω(Xₖ⁻¹) / Λ'(Xₖ⁻¹)
         foreach (var p in errorDegrees)
         {
             var inverse = Gf256.Exp(-p);
@@ -143,7 +143,7 @@ internal static class ReedSolomon
         return degree;
     }
 
-    /// <summary>Wertet ein Polynom mit aufsteigenden Koeffizienten aus (Horner).</summary>
+    /// <summary>Evaluates a polynomial with ascending coefficients (Horner).</summary>
     private static byte Evaluate(ReadOnlySpan<byte> coefficients, byte x)
     {
         byte value = 0;

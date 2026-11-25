@@ -2,7 +2,7 @@ using System.Text;
 
 namespace QrrQ.Rendering;
 
-/// <summary>Konsolenvorschau mit Halbblock-Zeichen (zwei Modulzeilen pro Textzeile).</summary>
+/// <summary>Console preview using half-block characters (two module rows per text line).</summary>
 internal static class TextRenderer
 {
     public static string Render(QrMatrix matrix, int quietZone, bool darkBackground)
@@ -13,7 +13,7 @@ internal static class TextRenderer
         {
             for (var column = 0; column < side; column++)
             {
-                // Auf dunklem Terminal werden die hellen Module „gedruckt“.
+                // On a dark terminal the light modules are the ones being "printed".
                 var upper = IsDark(matrix, row - quietZone, column - quietZone) != darkBackground;
                 var lower = IsDark(matrix, row + 1 - quietZone, column - quietZone) != darkBackground;
                 builder.Append((upper, lower) switch

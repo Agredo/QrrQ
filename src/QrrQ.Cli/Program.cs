@@ -13,30 +13,30 @@ return args switch
 static int Usage()
 {
     Console.WriteLine("""
-        QrrQ – QR-Codes, die gespiegelt einen anderen Inhalt zeigen.
+        QrrQ - QR codes that show a different content when mirrored.
 
-        Aufruf:
-          qrrq "<Text normal>" "<Text gespiegelt>" [Optionen]
-          qrrq --selftest [Anzahl]
+        Usage:
+          qrrq "<normal text>" "<mirrored text>" [options]
+          qrrq --selftest [count]
 
-        Optionen:
-          -o, --out <name>          Dateiname ohne Endung (Standard: qrrq)
-          --ecc <L|M|Q|H>           Fehlerkorrektur für beide Richtungen
-          --ecc-normal <L|M|Q|H>    nur normale Richtung
-          --ecc-mirrored <L|M|Q|H>  nur gespiegelte Richtung
-          --min-version <1-40>      kleinste QR-Version
-          --max-version <1-40>      größte QR-Version
-          --allow-corrections <n>   bis zu n Codewörter pro Richtung ab Werk korrigieren lassen (kleinere Codes)
-          --seed <zahl>             Startwert für die freien Bits
-          --attempts <n>            Zufallsbelegungen pro Maskenpaar (mehr = sauberere Optik, langsamer)
-          --scale <px>              Pixel pro Modul (Standard 10)
-          --border <module>         Ruhezone (Standard 4)
-          --svg                     zusätzlich SVG-Dateien schreiben
-          --no-preview              keine Konsolenvorschau
+        Options:
+          -o, --out <name>          File name without extension (default: qrrq)
+          --ecc <L|M|Q|H>           Error correction for both directions
+          --ecc-normal <L|M|Q|H>    normal direction only
+          --ecc-mirrored <L|M|Q|H>  mirrored direction only
+          --min-version <1-40>      smallest QR version
+          --max-version <1-40>      largest QR version
+          --allow-corrections <n>   let up to n codewords per direction be corrected by design (smaller codes)
+          --seed <number>           initial value for the free bits
+          --attempts <n>            random assignments per mask pair (more = cleaner look, slower)
+          --scale <px>              pixels per module (default 10)
+          --border <modules>        quiet zone (default 4)
+          --svg                     also write SVG files
+          --no-preview              no console preview
 
-        Ausgabe:
-          <name>.png            das Druckmotiv
-          <name>.mirrored.png   das Spiegelbild (zum Testen am Bildschirm)
+        Output:
+          <name>.png            the print artwork
+          <name>.mirrored.png   the mirror image (for testing on screen)
         """);
     return 0;
 }
@@ -56,7 +56,7 @@ static int Generate(string[] args)
         for (var i = 0; i < args.Length; i++)
         {
             var argument = args[i];
-            string Next() => i + 1 < args.Length ? args[++i] : throw new ArgumentException($"Für {argument} fehlt ein Wert.");
+            string Next() => i + 1 < args.Length ? args[++i] : throw new ArgumentException($"Missing value for {argument}.");
 
             switch (argument)
             {
@@ -77,20 +77,20 @@ static int Generate(string[] args)
                 case "--svg": svg = true; break;
                 case "--no-preview": preview = false; break;
                 case var unknown when unknown.StartsWith("--", StringComparison.Ordinal):
-                    throw new ArgumentException($"Unbekannte Option {unknown}.");
+                    throw new ArgumentException($"Unknown option {unknown}.");
                 default: texts.Add(argument); break;
             }
         }
 
         if (texts.Count != 2)
         {
-            throw new ArgumentException("Bitte genau zwei Texte angeben: normal und gespiegelt.");
+            throw new ArgumentException("Please provide exactly two texts: normal and mirrored.");
         }
     }
     catch (Exception exception) when (exception is ArgumentException or FormatException or OverflowException)
     {
-        Console.Error.WriteLine($"Fehler: {exception.Message}");
-        Console.Error.WriteLine("Hilfe: qrrq --help");
+        Console.Error.WriteLine($"Error: {exception.Message}");
+        Console.Error.WriteLine("Help: qrrq --help");
         return 2;
     }
 
@@ -118,9 +118,9 @@ static int Generate(string[] args)
         var (normal, mirrored) = code.Verify();
         Console.WriteLine($"""
             QrrQ Version {code.Version} ({code.Size}×{code.Size} Module) in {stopwatch.ElapsedMilliseconds} ms
-              normal:     "{normal.Text}"  [ECC {normal.Ecc.Letter}, Maske {normal.Mask}, {Health(normal.CorrectedCodewords, code.NormalFormatBitErrors)}]
-              gespiegelt: "{mirrored.Text}"  [ECC {mirrored.Ecc.Letter}, Maske {mirrored.Mask}, {Health(mirrored.CorrectedCodewords, code.MirroredFormatBitErrors)}]
-              Dateien:    {output}.png, {output}.mirrored.png{(svg ? $", {output}.svg, {output}.mirrored.svg" : "")}
+              normal:   "{normal.Text}"  [ECC {normal.Ecc.Letter}, mask {normal.Mask}, {Health(normal.CorrectedCodewords, code.NormalFormatBitErrors)}]
+              mirrored: "{mirrored.Text}"  [ECC {mirrored.Ecc.Letter}, mask {mirrored.Mask}, {Health(mirrored.CorrectedCodewords, code.MirroredFormatBitErrors)}]
+              files:    {output}.png, {output}.mirrored.png{(svg ? $", {output}.svg, {output}.mirrored.svg" : "")}
             """);
 
         if (preview)
@@ -133,15 +133,15 @@ static int Generate(string[] args)
     }
 
     static char Letter(string value) =>
-        value.Length == 1 ? value[0] : throw new FormatException($"'{value}' ist keine Fehlerkorrekturstufe (L, M, Q, H).");
+        value.Length == 1 ? value[0] : throw new FormatException($"'{value}' is not an error correction level (L, M, Q, H).");
 
     static string Health(int corrected, int formatBits) =>
-        (corrected == 0 ? "Daten fehlerfrei" : $"{corrected} Codewörter vorkorrigiert") +
-        (formatBits == 0 ? ", Format exakt" : $", Format {formatBits} Bit korrigiert");
+        (corrected == 0 ? "data error-free" : $"{corrected} codewords pre-corrected") +
+        (formatBits == 0 ? ", format exact" : $", format {formatBits} bits corrected");
 
     static int Fail(QrrQError error)
     {
-        Console.Error.WriteLine($"Fehler: {error.Message}");
+        Console.Error.WriteLine($"Error: {error.Message}");
         return 1;
     }
 }

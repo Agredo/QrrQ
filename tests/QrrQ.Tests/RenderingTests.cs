@@ -10,7 +10,7 @@ public class RenderingTests
     [Fact]
     public void Png_output_has_signature_and_expected_dimensions()
     {
-        var code = QrrQGenerator.Create("Falsche Fährte", "Code: 4711");
+        var code = QrrQGenerator.Create("False trail", "Code: 4711");
         var png = code.ToPng(moduleSize: 4, quietZone: 3);
 
         Assert.Equal(PngSignature, png[..8]);
@@ -23,7 +23,7 @@ public class RenderingTests
     [Fact]
     public void Mirrored_png_differs_from_normal_png()
     {
-        var code = QrrQGenerator.Create("Falsche Fährte", "Code: 4711");
+        var code = QrrQGenerator.Create("False trail", "Code: 4711");
 
         var (normal, mirrored) = code.ToPngPair();
 
@@ -35,7 +35,7 @@ public class RenderingTests
     [Fact]
     public void Png_rejects_invalid_parameters()
     {
-        var code = QrrQGenerator.Create("Falsche Fährte", "Code: 4711");
+        var code = QrrQGenerator.Create("False trail", "Code: 4711");
 
         Assert.Throws<ArgumentOutOfRangeException>(() => code.ToPng(moduleSize: 0));
         Assert.Throws<ArgumentOutOfRangeException>(() => code.ToPng(quietZone: -1));
@@ -44,7 +44,7 @@ public class RenderingTests
     [Fact]
     public void Svg_contains_a_single_path_and_correct_viewbox()
     {
-        var code = QrrQGenerator.Create("Falsche Fährte", "Code: 4711");
+        var code = QrrQGenerator.Create("False trail", "Code: 4711");
         var svg = code.ToSvg(moduleSize: 8, quietZone: 4);
 
         Assert.StartsWith("<svg", svg, StringComparison.Ordinal);
@@ -57,7 +57,7 @@ public class RenderingTests
     [Fact]
     public void Svg_can_use_custom_colors_and_rejects_invalid_sizes()
     {
-        var code = QrrQGenerator.Create("Falsche Fährte", "Code: 4711");
+        var code = QrrQGenerator.Create("False trail", "Code: 4711");
 
         var svg = code.ToSvg(darkColor: "#123456", lightColor: "#abcdef");
         Assert.Contains("#123456", svg, StringComparison.Ordinal);
@@ -68,7 +68,7 @@ public class RenderingTests
     [Fact]
     public void Text_preview_uses_half_block_characters()
     {
-        var code = QrrQGenerator.Create("Falsche Fährte", "Code: 4711");
+        var code = QrrQGenerator.Create("False trail", "Code: 4711");
         var preview = code.ToText();
 
         Assert.NotEmpty(preview);
@@ -80,7 +80,7 @@ public class RenderingTests
     [Fact]
     public void Packed_rows_match_matrix()
     {
-        var code = QrrQGenerator.Create("Falsche Fährte", "Code: 4711");
+        var code = QrrQGenerator.Create("False trail", "Code: 4711");
         var packed = code.Matrix.ToPackedRows();
         var stride = (code.Size + 7) / 8;
 

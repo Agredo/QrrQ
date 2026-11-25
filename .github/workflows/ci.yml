@@ -28,5 +28,5 @@ jobs:
       - name: Tests
         run: dotnet test -c Release --no-build --logger "console;verbosity=normal"
 
-      - name: Selbsttest
+      - name: Self-test
         run: dotnet run --project src/QrrQ.Cli -c Release --no-build -- --selftest 100

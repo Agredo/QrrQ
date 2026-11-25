@@ -3,21 +3,21 @@ using QrrQ.Reading;
 
 namespace QrrQ.Cli;
 
-/// <summary>Zufällige Rundreisen: erzeugen → normal und gespiegelt lesen → vergleichen.</summary>
+/// <summary>Random round trips: generate -> read normal and mirrored -> compare.</summary>
 internal static class SelfTest
 {
     private static readonly string[] Samples =
     [
-        "https://example.com/raetsel",
+        "https://example.com/puzzle",
         "HTTPS://QRRQ.DE/A",
-        "Falsche Fährte",
-        "Schau in den Spiegel",
+        "False trail",
+        "Look in the mirror",
         "Code: 4711",
         "0815",
-        "Grüße aus Bremen 🌊",
-        "WIFI:T:WPA;S:Escape;P:spiegel123;;",
-        "Raum 3 – Tresor links",
-        "geheim",
+        "Greetings from Bremen 🌊",
+        "WIFI:T:WPA;S:Escape;P:mirror123;;",
+        "Room 3 - safe on the left",
+        "secret",
     ];
 
     public static int Run(int count)
@@ -41,23 +41,23 @@ internal static class SelfTest
             if (result.Value is not QrrQCode code)
             {
                 failures++;
-                Console.WriteLine($"  ✗ keine Lösung: \"{normal}\" / \"{mirrored}\"");
+                Console.WriteLine($"  ✗ no solution: \"{normal}\" / \"{mirrored}\"");
                 continue;
             }
 
             var (readNormal, readMirrored) = code.Verify();
-            var rotated = QrReader.Read(code.MirroredMatrix.RotateClockwise()); // Scanner hält das Handy schief
+            var rotated = QrReader.Read(code.MirroredMatrix.RotateClockwise()); // the scanner holds the phone at an angle
             if (readNormal.Text != normal || readMirrored.Text != mirrored || rotated.Text != mirrored)
             {
                 failures++;
-                Console.WriteLine($"  ✗ falsch gelesen: \"{readNormal.Text}\" / \"{readMirrored.Text}\"");
+                Console.WriteLine($"  ✗ read incorrectly: \"{readNormal.Text}\" / \"{readMirrored.Text}\"");
                 continue;
             }
 
             if (code.IsErrorFree && !SurvivesDamage(code, random))
             {
                 failures++;
-                Console.WriteLine($"  ✗ Fehlerkorrektur versagt bei V{code.Version}");
+                Console.WriteLine($"  ✗ error correction failed at V{code.Version}");
                 continue;
             }
 
@@ -68,9 +68,9 @@ internal static class SelfTest
 
         Console.WriteLine($"""
 
-            Selbsttest: {ok}/{count} korrekt, davon {errorFree} komplett fehlerfrei, {failures} Fehlschläge
-            Dauer: {stopwatch.Elapsed.TotalSeconds:F1} s
-            Versionen: {string.Join(", ", versions.Select(v => $"V{v.Key}×{v.Value}"))}
+            Self-test: {ok}/{count} correct, of which {errorFree} completely error-free, {failures} failures
+            Duration: {stopwatch.Elapsed.TotalSeconds:F1} s
+            Versions: {string.Join(", ", versions.Select(v => $"V{v.Key}×{v.Value}"))}
             """);
         return failures == 0 ? 0 : 1;
     }
@@ -78,14 +78,14 @@ internal static class SelfTest
     private static string Pick(Random random) =>
         random.Next(4) == 0 ? random.NextInt64(1, 99_999_999).ToString() : Samples[random.Next(Samples.Length)];
 
-    /// <summary>Kippt ein paar Datenmodule und prüft, dass beide Richtungen weiterhin lesbar sind.</summary>
+    /// <summary>Flips a few data modules and checks that both directions remain readable.</summary>
     private static bool SurvivesDamage(QrrQCode code, Random random)
     {
         var modules = code.Matrix.ToArray();
         var size = code.Size;
         for (var flips = 0; flips < 2; flips++)
         {
-            // Rechte untere Ecke meiden (dort liegen die Nachrichtenanfänge beider Richtungen dicht beieinander).
+            // Avoid the bottom-right corner (that is where the message starts of both directions sit close together).
             int row = random.Next(9, size - 12), column = random.Next(9, size - 12);
             modules[row, column] = !modules[row, column];
         }

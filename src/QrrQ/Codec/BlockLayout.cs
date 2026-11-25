@@ -1,8 +1,8 @@
 namespace QrrQ.Codec;
 
 /// <summary>
-/// Aufteilung der Codewörter auf Reed-Solomon-Blöcke und deren Verschränkung (Interleaving)
-/// im Bitstrom für eine Kombination aus Version und Fehlerkorrekturstufe.
+/// Distribution of the codewords over Reed-Solomon blocks and their interleaving
+/// in the bit stream for one version and error correction level combination.
 /// </summary>
 internal sealed class BlockLayout
 {
@@ -25,7 +25,7 @@ internal sealed class BlockLayout
             StreamIndex[block] = new int[BlockLength(block)];
         }
 
-        // Daten: Spalte für Spalte über alle Blöcke, danach die ECC-Codewörter genauso.
+        // Data: column by column over all blocks, then the ECC codewords the same way.
         var next = 0;
         var maxDataLength = DataLength(BlockCount - 1);
         for (var i = 0; i < maxDataLength; i++)
@@ -49,7 +49,7 @@ internal sealed class BlockLayout
 
         if (next != TotalCodewords)
         {
-            throw new InvalidOperationException("Inkonsistente Blocktabelle.");
+            throw new InvalidOperationException("Inconsistent block table.");
         }
 
         DataStreamIndex = new int[DataCodewords];
@@ -84,16 +84,16 @@ internal sealed class BlockLayout
 
     public int ShortBlockLength { get; }
 
-    /// <summary>[Block][Index im Block] → Position im verschränkten Codewortstrom.</summary>
+    /// <summary>[block][index in block] -> position in the interleaved codeword stream.</summary>
     public int[][] StreamIndex { get; }
 
-    /// <summary>Datencodewort in Lesereihenfolge (Block 0, Block 1, …) → Position im Strom.</summary>
+    /// <summary>Data codeword in reading order (block 0, block 1, ...) -> position in the stream.</summary>
     public int[] DataStreamIndex { get; }
 
-    /// <summary>Position im Strom → Blocknummer.</summary>
+    /// <summary>Position in the stream -> block number.</summary>
     public int[] BlockOfStreamByte { get; }
 
-    /// <summary>Wie viele Codewörter pro Block maximal korrigiert werden können.</summary>
+    /// <summary>How many codewords per block can be corrected at most.</summary>
     public int CorrectablePerBlock => EccPerBlock / 2;
 
     public static BlockLayout Get(int version, EccLevel ecc) =>

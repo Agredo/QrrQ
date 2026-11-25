@@ -3,9 +3,9 @@ using System.Numerics;
 namespace QrrQ.Algebra;
 
 /// <summary>
-/// Lineares Gleichungssystem über GF(2) mit Bitset-Zeilen.
-/// Die rechte Seite ist ein <see cref="ulong"/>: Jedes der 64 Bits ist eine eigene „Spur“
-/// (hier: eine Masken-Kombination), die mit derselben Elimination mitgelöst wird.
+/// Linear system of equations over GF(2) with bitset rows.
+/// The right-hand side is a <see cref="ulong"/>: each of the 64 bits is its own "lane"
+/// (here: a mask combination) that is solved along in the same elimination.
 /// </summary>
 internal sealed class Gf2System(int columns)
 {
@@ -26,7 +26,7 @@ internal sealed class Gf2System(int columns)
         rightHandSides.Add(rightHandSide);
     }
 
-    /// <summary>Gauß-Jordan-Elimination zur reduzierten Zeilenstufenform.</summary>
+    /// <summary>Gauss-Jordan elimination to reduced row echelon form.</summary>
     public Gf2Reduced Reduce()
     {
         var matrix = rows.ToArray();
@@ -99,17 +99,17 @@ internal sealed class Gf2System(int columns)
     }
 }
 
-/// <summary>Ein reduziertes System, aus dem sich für jede Spur Lösungen ziehen lassen.</summary>
+/// <summary>A reduced system from which solutions can be drawn for every lane.</summary>
 internal sealed class Gf2Reduced(ulong[][] rows, ulong[] rightHandSides, int[] pivots, ulong inconsistentLanes)
 {
-    /// <summary>Spuren, für die das System widersprüchlich ist.</summary>
+    /// <summary>Lanes for which the system is inconsistent.</summary>
     public ulong InconsistentLanes { get; } = inconsistentLanes;
 
     public int Rank => pivots.Length;
 
     /// <summary>
-    /// Ergänzt eine Belegung: Freie Variablen behalten ihren Wert aus <paramref name="assignment"/>,
-    /// Pivot-Variablen werden so gesetzt, dass alle Gleichungen der Spur <paramref name="lane"/> stimmen.
+    /// Completes an assignment: free variables keep their value from <paramref name="assignment"/>,
+    /// pivot variables are set so that all equations of lane <paramref name="lane"/> hold.
     /// </summary>
     public void Solve(int lane, Span<ulong> assignment)
     {

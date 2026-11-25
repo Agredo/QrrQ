@@ -1,6 +1,6 @@
 namespace QrrQ.Codec;
 
-/// <summary>Die acht Datenmasken aus ISO/IEC 18004.</summary>
+/// <summary>The eight data masks from ISO/IEC 18004.</summary>
 internal static class Masks
 {
     public static bool IsDark(int mask, int row, int column) => mask switch

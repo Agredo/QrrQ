@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Paketversion (leer = 0.0.0-dev.<Run>)'
+        description: 'Package version (empty = 0.0.0-dev.<Run>)'
         required: false
         type: string
 
@@ -28,7 +28,7 @@ jobs:
         with:
           dotnet-version: 11.0.x
 
-      - name: Version bestimmen
+      - name: Determine version
         id: version
         shell: bash
         env:
@@ -53,12 +53,12 @@ jobs:
       - name: Tests
         run: dotnet test -c Release --no-build --logger "console;verbosity=normal"
 
-      - name: Pakete packen
+      - name: Pack the packages
         run: |
           dotnet pack src/QrrQ/QrrQ.csproj -c Release --no-build -o artifacts -p:Version=${{ steps.version.outputs.value }}
           dotnet pack src/QrrQ.Cli/QrrQ.Cli.csproj -c Release --no-build -o artifacts -p:Version=${{ steps.version.outputs.value }}
 
-      - name: Artefakte hochladen
+      - name: Upload artifacts
         uses: actions/upload-artifact@v7
         with:
           name: nuget-packages-${{ steps.version.outputs.value }}
@@ -66,7 +66,7 @@ jobs:
             artifacts/*.nupkg
             artifacts/*.snupkg
 
-      - name: Auf nuget.org veröffentlichen
+      - name: Publish to nuget.org
         if: env.NUGET_API_KEY != ''
         run: |
           for package in artifacts/*.nupkg artifacts/*.snupkg; do
@@ -76,11 +76,11 @@ jobs:
               --skip-duplicate
           done
 
-      - name: Hinweis ohne API-Key
+      - name: Note without an API key
         if: env.NUGET_API_KEY == ''
-        run: echo "::warning::Secret NUGET_API_KEY fehlt – die Pakete wurden nur als Artefakt bereitgestellt."
+        run: echo "::warning::Secret NUGET_API_KEY is missing - the packages were only provided as an artifact."
 
-      - name: GitHub-Release anlegen
+      - name: Create the GitHub release
         if: github.ref_type == 'tag'
         env:
           GH_TOKEN: ${{ github.token }}

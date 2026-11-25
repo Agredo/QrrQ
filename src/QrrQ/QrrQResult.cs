@@ -1,8 +1,8 @@
 namespace QrrQ;
 
 /// <summary>
-/// Ergebnis von <see cref="QrrQGenerator.TryCreate"/>: entweder ein fertiger
-/// <see cref="QrrQCode"/> oder ein <see cref="QrrQError"/> (Union-Typ, C# 15).
+/// Result of <see cref="QrrQGenerator.TryCreate"/>: either a finished
+/// <see cref="QrrQCode"/> or a <see cref="QrrQError"/> (union type, C# 15).
 /// </summary>
 /// <example>
 /// <code>

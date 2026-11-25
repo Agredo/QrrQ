@@ -1,29 +1,29 @@
 namespace QrrQ;
 
-/// <summary>Einstellungen für <see cref="QrrQGenerator"/>.</summary>
+/// <summary>Settings for <see cref="QrrQGenerator"/>.</summary>
 public sealed record QrrQOptions
 {
-    /// <summary>Standardeinstellungen: automatische Fehlerkorrektur (M/L), Version 1–40, streng fehlerfrei.</summary>
+    /// <summary>Default settings: automatic error correction (M/L), version 1-40, strictly error-free.</summary>
     public static QrrQOptions Default { get; } = new();
 
     /// <summary>
-    /// Fehlerkorrektur für das normale Lesen. <c>null</c> = automatisch (erst M, dann L).
-    /// Hinweis: Die Datenkapazitäten beider Richtungen müssen zusammen größer sein als die
-    /// Gesamtzahl der Codewörter – H geht daher nur mit L, Q mit L (oder knapp mit M).
+    /// Error correction for normal reading. <c>null</c> = automatic (M first, then L).
+    /// Note: the data capacities of both directions combined must be larger than the
+    /// total number of codewords - so H only works with L, Q with L (or barely with M).
     /// </summary>
     public EccLevel? NormalEcc { get; init; }
 
-    /// <summary>Fehlerkorrektur für das gespiegelte Lesen. <c>null</c> = automatisch.</summary>
+    /// <summary>Error correction for mirrored reading. <c>null</c> = automatic.</summary>
     public EccLevel? MirroredEcc { get; init; }
 
-    /// <summary>Kleinste erlaubte QR-Version (1–40).</summary>
+    /// <summary>Smallest allowed QR version (1-40).</summary>
     public int MinVersion
     {
         get;
         init => field = ValidateVersion(value);
     } = 1;
 
-    /// <summary>Größte erlaubte QR-Version (1–40).</summary>
+    /// <summary>Largest allowed QR version (1-40).</summary>
     public int MaxVersion
     {
         get;
@@ -31,10 +31,10 @@ public sealed record QrrQOptions
     } = 40;
 
     /// <summary>
-    /// Wie viele Codewörter pro Leserichtung höchstens schon im gedruckten Code
-    /// von der Fehlerkorrektur repariert werden dürfen. <c>0</c> (Standard) heißt:
-    /// Beide Richtungen sind fehlerfreie Reed-Solomon-Codewörter. Werte &gt; 0 erlauben
-    /// kleinere Codes für längere Texte, kosten aber Robustheit.
+    /// How many codewords per reading direction may already have been repaired by
+    /// error correction in the printed code. <c>0</c> (default) means: both directions
+    /// are error-free Reed-Solomon codewords. Values &gt; 0 allow smaller codes for
+    /// longer texts but cost robustness.
     /// </summary>
     public int MaxCorrectedCodewords
     {
@@ -42,10 +42,10 @@ public sealed record QrrQOptions
         init => field = value >= 0 ? value : throw new ArgumentOutOfRangeException(nameof(MaxCorrectedCodewords));
     }
 
-    /// <summary>Startwert für die frei wählbaren Bits – gleicher Seed, gleiche Eingabe, gleicher Code.</summary>
+    /// <summary>Seed for the freely chosen bits - same seed, same input, same code.</summary>
     public int Seed { get; init; } = 0x5152;
 
-    /// <summary>Zufallsbelegungen pro Masken-Kombination; der optisch beste Kandidat gewinnt.</summary>
+    /// <summary>Random assignments per mask combination; the visually best candidate wins.</summary>
     public int AttemptsPerCandidate
     {
         get;
@@ -68,5 +68,5 @@ public sealed record QrrQOptions
     }
 
     private static int ValidateVersion(int version) =>
-        version is >= 1 and <= 40 ? version : throw new ArgumentOutOfRangeException(nameof(version), "QR-Versionen reichen von 1 bis 40.");
+        version is >= 1 and <= 40 ? version : throw new ArgumentOutOfRangeException(nameof(version), "QR versions range from 1 to 40.");
 }

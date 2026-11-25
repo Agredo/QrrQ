@@ -3,8 +3,8 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <RootNamespace>QrrQ.Cli</RootNamespace>
-    <!-- Assembly bleibt QrrQ.Cli: ein AssemblyName "qrrq" würde unter Windows mit QrrQ.dll kollidieren -->
-    <!-- als .NET-Tool installierbar: dotnet tool install -g QrrQ.Cli → Befehl "qrrq" -->
+    <!-- The assembly stays QrrQ.Cli: an AssemblyName "qrrq" would collide with QrrQ.dll on Windows -->
+    <!-- installable as a .NET tool: dotnet tool install -g QrrQ.Cli -> command "qrrq" -->
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>qrrq</ToolCommandName>
     <PackageId>QrrQ.Cli</PackageId>
@@ -17,8 +17,8 @@
 
   <!--
     Native AOT: dotnet publish src/QrrQ.Cli -c Release -r <rid> -p:PublishAot=true
-    Die Schalter darunter gelten nur für diesen Publish und verkleinern die Binärdatei.
-    Als .NET-Tool bleibt das Paket framework-dependent (AOT-Binaries gibt es im Release).
+    The switches below only apply to that publish and make the binary smaller.
+    As a .NET tool the package stays framework-dependent (AOT binaries are in the release).
   -->
   <PropertyGroup Condition="'$(PublishAot)' == 'true'">
     <IlcOptimizationPreference>Size</IlcOptimizationPreference>

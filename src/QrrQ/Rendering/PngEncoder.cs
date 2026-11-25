@@ -3,7 +3,7 @@ using System.IO.Compression;
 
 namespace QrrQ.Rendering;
 
-/// <summary>Minimaler PNG-Encoder (1 Bit Graustufe) ohne externe Abhängigkeiten.</summary>
+/// <summary>Minimal PNG encoder (1-bit grayscale) without external dependencies.</summary>
 internal static class PngEncoder
 {
     private static readonly uint[] CrcTable = BuildCrcTable();
@@ -17,7 +17,7 @@ internal static class PngEncoder
 
         for (var y = 0; y < pixels; y++)
         {
-            var rowStart = y * (stride + 1); // raw[rowStart] = 0: Filtertyp „None“
+            var rowStart = y * (stride + 1); // raw[rowStart] = 0: filter type "None"
             var moduleRow = y / moduleSize - quietZone;
             for (var x = 0; x < pixels; x++)
             {
@@ -27,7 +27,7 @@ internal static class PngEncoder
                            matrix[moduleRow, moduleColumn];
                 if (!dark)
                 {
-                    raw[rowStart + 1 + (x >> 3)] |= (byte)(0x80 >> (x & 7)); // 1 = weiß
+                    raw[rowStart + 1 + (x >> 3)] |= (byte)(0x80 >> (x & 7)); // 1 = white
                 }
             }
         }
@@ -38,11 +38,11 @@ internal static class PngEncoder
         Span<byte> header = stackalloc byte[13];
         BinaryPrimitives.WriteInt32BigEndian(header, pixels);
         BinaryPrimitives.WriteInt32BigEndian(header[4..], pixels);
-        header[8] = 1;  // Bittiefe
-        header[9] = 0;  // Graustufen
-        header[10] = 0; // Deflate
-        header[11] = 0; // Standardfilter
-        header[12] = 0; // kein Interlacing
+        header[8] = 1;  // bit depth
+        header[9] = 0;  // grayscale
+        header[10] = 0; // deflate
+        header[11] = 0; // standard filter
+        header[12] = 0; // no interlacing
         WriteChunk(png, "IHDR"u8, header);
         WriteChunk(png, "IDAT"u8, Compress(raw));
         WriteChunk(png, "IEND"u8, []);

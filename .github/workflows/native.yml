@@ -40,32 +40,32 @@ jobs:
         with:
           dotnet-version: 11.0.x
 
-      - name: Linux-Build-Abhängigkeiten
+      - name: Linux build dependencies
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y clang zlib1g-dev
 
-      - name: UPX bereitstellen (Linux)
+      - name: Provide UPX (Linux)
         if: runner.os == 'Linux'
         shell: bash
         run: |
           case "${{ matrix.rid }}" in
             linux-x64) asset=amd64_linux ;;
             linux-arm64) asset=arm64_linux ;;
-            *) echo "kein UPX-Archiv für ${{ matrix.rid }}"; exit 1 ;;
+            *) echo "no UPX archive for ${{ matrix.rid }}"; exit 1 ;;
           esac
           curl -sSL "https://github.com/upx/upx/releases/download/v${UPX_VERSION}/upx-${UPX_VERSION}-${asset}.tar.xz" -o upx.tar.xz
           tar -xJf upx.tar.xz
           echo "$PWD/upx-${UPX_VERSION}-${asset}" >> "$GITHUB_PATH"
           "./upx-${UPX_VERSION}-${asset}/upx" --version
 
-      - name: UPX bereitstellen (macOS)
+      - name: Provide UPX (macOS)
         if: runner.os == 'macOS'
         shell: bash
         run: |
           brew install upx
           upx --version
 
-      - name: UPX bereitstellen (Windows)
+      - name: Provide UPX (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
@@ -75,7 +75,7 @@ jobs:
           $dir | Out-File -FilePath $env:GITHUB_PATH -Append
           & ".\$dir\upx.exe" --version
 
-      - name: Version bestimmen
+      - name: Determine version
         id: version
         shell: bash
         run: |
@@ -86,7 +86,7 @@ jobs:
           fi
           echo "Version: $(grep '^value=' "$GITHUB_OUTPUT")"
 
-      - name: Native AOT bauen
+      - name: Build Native AOT
         shell: bash
         run: >
           dotnet publish src/QrrQ.Cli/QrrQ.Cli.csproj
@@ -95,7 +95,7 @@ jobs:
           -p:Version=${{ steps.version.outputs.value }}
           -o out
 
-      - name: Mit UPX komprimieren
+      - name: Compress with UPX
         shell: bash
         run: |
           file="out/QrrQ.Cli${{ matrix.exe }}"
@@ -103,7 +103,7 @@ jobs:
           cp "$file" "$file.orig"
           extra=()
           if [[ "${{ runner.os }}" == "macOS" ]]; then
-            # macOS-Binärdateien sind ohne --force-macos gesperrt (Signatur würde brechen).
+            # macOS binaries are locked without --force-macos (the signature would break).
             codesign --remove-signature "$file" || true
             extra=(--force-macos)
           fi
@@ -114,30 +114,30 @@ jobs:
               "$file" --selftest 5 > /dev/null || failed=1
             fi
             if [[ -n "$failed" ]]; then
-              echo "::warning::Gepackte Binärdatei unter macOS nicht lauffähig, bleibe ungepackt"
+              echo "::warning::Packed binary does not run on macOS, staying unpacked"
               cp "$file.orig" "$file"
               codesign --force --sign - "$file"
             fi
           else
-            echo "::warning::UPX ist auf ${{ matrix.rid }} nicht anwendbar, bleibe ungepackt"
+            echo "::warning::UPX is not applicable on ${{ matrix.rid }}, staying unpacked"
             cp "$file.orig" "$file"
           fi
           rm -f "$file.orig"
           after=$(wc -c < "$file")
           echo "UPX: $before -> $after Bytes"
 
-      - name: Ad-hoc-Signatur erneuern (macOS)
+      - name: Refresh the ad-hoc signature (macOS)
         if: runner.os == 'macOS'
         shell: bash
         run: |
           codesign --force --sign - out/QrrQ.Cli
           codesign --verify --verbose out/QrrQ.Cli
 
-      - name: Selbsttest der Binärdatei
+      - name: Self-test of the binary
         shell: bash
         run: ./out/QrrQ.Cli${{ matrix.exe }} --selftest 25
 
-      - name: Paketieren (Windows)
+      - name: Package (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
@@ -148,7 +148,7 @@ jobs:
           Compress-Archive -Path dist/* -DestinationPath "$name.zip"
           Get-Item "$name.zip" | Select-Object Name, Length
 
-      - name: Paketieren (Linux/macOS)
+      - name: Package (Linux/macOS)
         if: runner.os != 'Windows'
         shell: bash
         run: |
@@ -168,7 +168,7 @@ jobs:
             qrrq-*.zip
             qrrq-*.tar.gz
 
-      - name: An das Release anhängen
+      - name: Attach to the release
         if: github.ref_type == 'tag'
         shell: bash
         env:
