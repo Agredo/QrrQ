@@ -99,11 +99,30 @@ jobs:
         shell: bash
         run: |
           file="out/QrrQ.Cli${{ matrix.exe }}"
-          if [[ "${{ runner.os }}" == "macOS" ]]; then
-            codesign --remove-signature "$file" || true
-          fi
           before=$(wc -c < "$file")
-          upx --best --lzma "$file"
+          cp "$file" "$file.orig"
+          extra=()
+          if [[ "${{ runner.os }}" == "macOS" ]]; then
+            # macOS-Binärdateien sind ohne --force-macos gesperrt (Signatur würde brechen).
+            codesign --remove-signature "$file" || true
+            extra=(--force-macos)
+          fi
+          failed=""
+          if upx --best --lzma "${extra[@]}" "$file"; then
+            if [[ "${{ runner.os }}" == "macOS" ]]; then
+              codesign --force --sign - "$file" || failed=1
+              "$file" --selftest 5 > /dev/null || failed=1
+            fi
+            if [[ -n "$failed" ]]; then
+              echo "::warning::Gepackte Binärdatei unter macOS nicht lauffähig, bleibe ungepackt"
+              cp "$file.orig" "$file"
+              codesign --force --sign - "$file"
+            fi
+          else
+            echo "::warning::UPX ist auf ${{ matrix.rid }} nicht anwendbar, bleibe ungepackt"
+            cp "$file.orig" "$file"
+          fi
+          rm -f "$file.orig"
           after=$(wc -c < "$file")
           echo "UPX: $before -> $after Bytes"
 
